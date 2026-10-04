@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { supabase } from '../lib/supabase'
 
 const RESTAURANT_ID =
@@ -202,6 +208,33 @@ function generateTimes(
   }
 
   return result
+}
+
+/*
+ * ========================================================
+ * STATO PRENOTAZIONE
+ * ========================================================
+ */
+
+function getStatusLabel(
+  status: string
+): string {
+  switch (status) {
+    case 'confirmed':
+      return 'Confermata'
+
+    case 'cancelled':
+      return 'Cancellata'
+
+    case 'pending':
+      return 'In attesa'
+
+    case 'completed':
+      return 'Completata'
+
+    default:
+      return status
+  }
 }
 
 /*
@@ -456,7 +489,7 @@ function renderAuditChanges(
     newStatus
   ) {
     changes.push(
-      `Stato: ${oldStatus} → ${newStatus}`
+      `Stato: ${getStatusLabel(oldStatus)} → ${getStatusLabel(newStatus)}`
     )
   }
 
@@ -566,6 +599,13 @@ export default function ReservationsList({
   ] = useState(false)
 
   const [
+    deletingReservationId,
+    setDeletingReservationId,
+  ] = useState<string | null>(
+    null
+  )
+
+  const [
     editDate,
     setEditDate,
   ] = useState('')
@@ -630,12 +670,6 @@ export default function ReservationsList({
     setEditMessage,
   ] = useState('')
 
-  /*
-   * ========================================================
-   * DISPONIBILITÀ TAVOLI IN MODIFICA
-   * ========================================================
-   */
-
   const [
     editOccupiedTableIds,
     setEditOccupiedTableIds,
@@ -647,12 +681,6 @@ export default function ReservationsList({
     loadingEditAvailability,
     setLoadingEditAvailability,
   ] = useState(false)
-
-  /*
-   * ========================================================
-   * AUDIT
-   * ========================================================
-   */
 
   const [
     auditReservationId,
@@ -710,12 +738,6 @@ export default function ReservationsList({
 
     loadReservations()
   }, [selectedDate])
-
-  /*
-   * Quando cambiano data/orario/sala
-   * durante la modifica, ricalcoliamo
-   * immediatamente i tavoli occupati.
-   */
 
   useEffect(() => {
     if (
@@ -805,13 +827,6 @@ export default function ReservationsList({
       sortTables(
         tablesResult.data || []
       )
-
-    /*
-     * Mostriamo solamente le sale
-     * che hanno almeno un tavolo attivo.
-     * In questo modo eventuali vecchie
-     * sale vuote non compaiono.
-     */
 
     const activeRoomIds =
       new Set(
@@ -1103,7 +1118,7 @@ export default function ReservationsList({
 
   /*
    * ========================================================
-   * DISPONIBILITÀ TAVOLI IN MODIFICA
+   * DISPONIBILITÀ IN MODIFICA
    * ========================================================
    */
 
@@ -1132,16 +1147,6 @@ export default function ReservationsList({
       setEditOccupiedTableIds(
         conflicting
       )
-
-      /*
-       * Se uno dei tavoli precedentemente
-       * selezionati è diventato occupato,
-       * lo togliamo dalla selezione.
-       *
-       * In questo modo non è possibile
-       * salvare accidentalmente una
-       * tavolata su un tavolo occupato.
-       */
 
       setEditTableIds(
         previous =>
@@ -1246,6 +1251,135 @@ export default function ReservationsList({
     setAuditReservationId(null)
     setAuditRecords([])
     setAuditError('')
+  }
+
+  /*
+   * ========================================================
+   * CANCELLAZIONE PRENOTAZIONE
+   * ========================================================
+   */
+
+  async function deleteReservation(
+    reservation: ReservationComplete
+  ) {
+    if (
+      deletingReservationId
+    ) {
+      return
+    }
+
+    const customerName =
+      reservation.customer
+        ?.full_name ||
+      'cliente'
+
+    const reservationTime =
+      normalizeTime(
+        reservation.reservation_time
+      )
+
+    const tableNames =
+      reservation.tables
+        ?.map(
+          table =>
+            table.table_name
+        )
+        .join(' + ') ||
+      'tavolo non disponibile'
+
+    const confirmed =
+      window.confirm(
+        `ATTENZIONE!\n\nVuoi cancellare definitivamente questa prenotazione?\n\nCliente: ${customerName}\nData: ${reservation.reservation_date}\nOra: ${reservationTime}\nCoperti: ${reservation.guests}\nTavoli: ${tableNames}\n\nL'operazione non potrà essere annullata.`
+      )
+
+    if (!confirmed) {
+      return
+    }
+
+    setDeletingReservationId(
+      reservation.id
+    )
+
+    setError('')
+
+    try {
+      /*
+       * Cancelliamo direttamente la prenotazione.
+       *
+       * reservation_tables ha ON DELETE CASCADE,
+       * quindi i collegamenti ai tavoli vengono
+       * eliminati automaticamente.
+       *
+       * Il trigger di audit sulle reservations
+       * registra l'evento "deleted".
+       */
+
+      const {
+        error: deleteError,
+      } = await supabase
+        .from('reservations')
+        .delete()
+        .eq(
+          'id',
+          reservation.id
+        )
+        .eq(
+          'restaurant_id',
+          RESTAURANT_ID
+        )
+
+      if (deleteError) {
+        throw new Error(
+          `Errore cancellazione prenotazione: ${deleteError.message}`
+        )
+      }
+
+      if (
+        editingReservation?.id ===
+        reservation.id
+      ) {
+        setEditingReservation(null)
+        setEditError('')
+        setEditMessage('')
+      }
+
+      if (
+        auditReservationId ===
+        reservation.id
+      ) {
+        closeAudit()
+      }
+
+      setReservations(
+        previous =>
+          previous.filter(
+            item =>
+              item.id !==
+              reservation.id
+          )
+      )
+
+      /*
+       * Ricarichiamo comunque dal database
+       * per mantenere l'interfaccia perfettamente
+       * sincronizzata.
+       */
+      await loadReservations()
+    } catch (deleteError) {
+      console.error(
+        'ERRORE CANCELLAZIONE:',
+        deleteError
+      )
+
+      const message =
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Errore sconosciuto durante la cancellazione.'
+
+      setError(message)
+    } finally {
+      setDeletingReservationId(null)
+    }
   }
 
   /*
@@ -1770,11 +1904,6 @@ export default function ReservationsList({
         )
       }
 
-      /*
-       * Secondo controllo definitivo
-       * direttamente prima del salvataggio.
-       */
-
       const conflicting =
         await getConflictingTableIds(
           editingReservation.id,
@@ -1868,6 +1997,26 @@ export default function ReservationsList({
       const primaryTableId =
         editTableIds[0]
 
+      /*
+       * Memorizziamo i vecchi collegamenti.
+       * Servono per poter ripristinare la situazione
+       * precedente se l'inserimento dei nuovi link
+       * dovesse fallire.
+       */
+
+      const oldTableIds =
+        editingReservation.tables?.map(
+          table =>
+            table.id
+        ) ||
+        (
+          editingReservation.table_id
+            ? [
+                editingReservation.table_id,
+              ]
+            : []
+        )
+
       const {
         error:
           reservationUpdateError,
@@ -1942,6 +2091,28 @@ export default function ReservationsList({
       if (
         insertLinksError
       ) {
+        /*
+         * Tentativo di ripristino
+         * dei vecchi tavoli.
+         */
+
+        if (
+          oldTableIds.length > 0
+        ) {
+          await supabase
+            .from('reservation_tables')
+            .insert(
+              oldTableIds.map(
+                tableId => ({
+                  reservation_id:
+                    editingReservation.id,
+                  table_id:
+                    tableId,
+                })
+              )
+            )
+        }
+
         throw new Error(
           `Errore assegnazione nuovi tavoli: ${insertLinksError.message}`
         )
@@ -2949,7 +3120,7 @@ export default function ReservationsList({
                 'collapse',
               width: '100%',
               minWidth:
-                1000,
+                1100,
               color:
                 '#e5e7eb',
             }}
@@ -3000,11 +3171,12 @@ export default function ReservationsList({
             <tbody>
               {reservations.map(
                 reservation => (
-                  <>
+                  <Fragment
+                    key={
+                      reservation.id
+                    }
+                  >
                     <tr
-                      key={
-                        reservation.id
-                      }
                       style={{
                         background:
                           '#111827',
@@ -3029,9 +3201,9 @@ export default function ReservationsList({
                             '#fbbf24',
                         }}
                       >
-                        {
+                        {normalizeTime(
                           reservation.reservation_time
-                        }
+                        )}
                       </td>
 
                       <td
@@ -3142,7 +3314,9 @@ export default function ReservationsList({
                           }}
                         >
                           {
-                            reservation.status
+                            getStatusLabel(
+                              reservation.status
+                            )
                           }
                         </span>
                       </td>
@@ -3168,6 +3342,10 @@ export default function ReservationsList({
                                 reservation
                               )
                             }
+                            disabled={
+                              deletingReservationId ===
+                              reservation.id
+                            }
                             style={{
                               padding:
                                 '7px 11px',
@@ -3183,6 +3361,11 @@ export default function ReservationsList({
                                 'pointer',
                               whiteSpace:
                                 'nowrap',
+                              opacity:
+                                deletingReservationId ===
+                                reservation.id
+                                  ? 0.5
+                                  : 1,
                             }}
                           >
                             ✏️ Modifica
@@ -3194,6 +3377,10 @@ export default function ReservationsList({
                               loadAudit(
                                 reservation.id
                               )
+                            }
+                            disabled={
+                              deletingReservationId ===
+                              reservation.id
                             }
                             style={{
                               padding:
@@ -3220,6 +3407,42 @@ export default function ReservationsList({
                           >
                             🔎 Storico
                           </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              deleteReservation(
+                                reservation
+                              )
+                            }
+                            disabled={
+                              deletingReservationId ===
+                              reservation.id
+                            }
+                            style={{
+                              padding:
+                                '7px 11px',
+                              border:
+                                '1px solid #dc2626',
+                              borderRadius:
+                                6,
+                              background:
+                                '#450a0a',
+                              color:
+                                '#fca5a5',
+                              cursor:
+                                'pointer',
+                              whiteSpace:
+                                'nowrap',
+                              fontWeight:
+                                'bold',
+                            }}
+                          >
+                            {deletingReservationId ===
+                            reservation.id
+                              ? '⏳ Eliminazione...'
+                              : '🗑️ Cancella'}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -3227,7 +3450,6 @@ export default function ReservationsList({
                     {auditReservationId ===
                       reservation.id && (
                       <tr
-                        key={`${reservation.id}-audit`}
                         style={{
                           background:
                             '#0f172a',
@@ -3611,6 +3833,32 @@ export default function ReservationsList({
                                             </div>
                                           )}
 
+                                        {audit.action ===
+                                          'deleted' && (
+                                          <div
+                                            style={{
+                                              marginTop:
+                                                10,
+                                              padding:
+                                                10,
+                                              borderRadius:
+                                                7,
+                                              background:
+                                                '#450a0a',
+                                              color:
+                                                '#fca5a5',
+                                              fontWeight:
+                                                'bold',
+                                            }}
+                                          >
+                                            🗑️ Questa
+                                            prenotazione è
+                                            stata
+                                            cancellata
+                                            definitivamente.
+                                          </div>
+                                        )}
+
                                         {renderAuditChanges(
                                           audit
                                         )}
@@ -3624,7 +3872,7 @@ export default function ReservationsList({
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 )
               )}
             </tbody>
@@ -3641,7 +3889,7 @@ export default function ReservationsList({
  * ========================================================
  */
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
   padding: 8,
   background: '#1f2937',
   color: '#f8fafc',
@@ -3650,7 +3898,7 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
 }
 
-const selectStyle: React.CSSProperties = {
+const selectStyle: CSSProperties = {
   padding: 8,
   background: '#1f2937',
   color: '#f8fafc',
@@ -3658,7 +3906,7 @@ const selectStyle: React.CSSProperties = {
   borderRadius: 6,
 }
 
-const cellStyle: React.CSSProperties = {
+const cellStyle: CSSProperties = {
   padding: 9,
   borderBottom: '1px solid #374151',
   verticalAlign: 'middle',
