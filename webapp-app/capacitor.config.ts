@@ -1,9 +1,9 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
   appId: 'com.ristotable.app',
-  appName: 'RistoTable',
-  webDir: 'dist'
-};
+  appName: 'Prenotazioni da Bacco',
+  webDir: 'dist',
+}
 
-export default config;
+export default config
