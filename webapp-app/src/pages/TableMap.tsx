@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { formatDateIT } from '../lib/dateUtils'
 
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
@@ -896,7 +897,7 @@ export default function TableMap({
                 fontSize: 16,
               }}
             >
-              {selectedDate}
+              {formatDateIT(selectedDate)}
             </div>
           </div>
 
