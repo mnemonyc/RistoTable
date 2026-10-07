@@ -4,6 +4,12 @@ import { SplashScreen } from '@capacitor/splash-screen'
 import './index.css'
 import App from './App.tsx'
 
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds)
+  })
+}
+
 async function startApp() {
   const rootElement = document.getElementById('root')
 
@@ -17,13 +23,18 @@ async function startApp() {
     </StrictMode>,
   )
 
-  // Nasconde la Splash Screen nativa solo dopo
-  // che l'app React è stata montata.
   try {
+    /*
+     * Lasciamo alla UI React il tempo di essere realmente visibile.
+     * In questo modo evitiamo il flash grigio tra Splash e Login.
+     */
+    await wait(1200)
     await SplashScreen.hide()
   } catch {
-    // Sul browser/web la Splash Screen nativa non esiste:
-    // ignoriamo semplicemente l'errore.
+    /*
+     * Nel browser/web la Splash nativa non esiste.
+     * L'eventuale errore viene ignorato.
+     */
   }
 }
 
