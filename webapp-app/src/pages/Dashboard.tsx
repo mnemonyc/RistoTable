@@ -5,6 +5,8 @@ import ReservationsList from './ReservationsList'
 import TableMap from './TableMap'
 import DashboardStats from './DashboardStats'
 import TableManagement from './TableManagement'
+import ItalianDateInput from '../lib/ItalianDateInput'
+import { formatDateIT } from '../lib/dateUtils'
 
 function getLocalDate(): string {
   const now = new Date()
@@ -122,19 +124,13 @@ export default function Dashboard() {
           📅 Data:
         </label>
 
-        <input
-          type="date"
-          value={
-            selectedDate
-          }
-          onChange={e =>
-            setSelectedDate(
-              e.target.value
-            )
-          }
+        <ItalianDateInput
+          value={selectedDate}
+          onChange={setSelectedDate}
           style={{
             marginLeft: 10,
             padding: 6,
+            width: 110,
           }}
         />
       </div>
