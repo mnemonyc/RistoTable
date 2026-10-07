@@ -1483,9 +1483,39 @@ export default function TableMap({
                     top:
                       table.pos_y,
 
-                    width: 86,
+                    width:
+                      ['T1', 'T2', 'T3'].includes(
+                        table.table_name
+                      )
+                        ? 150
+                        : table.table_name === 'T4'
+                        ? 66
+                        : ['T10', 'T11'].includes(
+                            table.table_name
+                          )
+                        ? 66
+                        : ['T5'].includes(
+                            table.table_name
+                          )
+                        ? 110
+                        : 78,
 
-                    height: 66,
+                    height:
+                      ['T1', 'T2', 'T3'].includes(
+                        table.table_name
+                      )
+                        ? 66
+                        : table.table_name === 'T4'
+                        ? 126
+                        : ['T10', 'T11'].includes(
+                            table.table_name
+                          )
+                        ? 116
+                        : ['T5'].includes(
+                            table.table_name
+                          )
+                        ? 50
+                        : 50,
 
                     backgroundColor,
 
