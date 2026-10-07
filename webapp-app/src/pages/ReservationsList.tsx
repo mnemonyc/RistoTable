@@ -6,6 +6,8 @@ import {
   type CSSProperties,
 } from 'react'
 import { supabase } from '../lib/supabase'
+import ItalianDateInput from '../lib/ItalianDateInput'
+import { formatDateIT } from '../lib/dateUtils'
 
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
@@ -459,7 +461,7 @@ function renderAuditChanges(
     newDate
   ) {
     changes.push(
-      `Data: ${oldDate} → ${newDate}`
+      `Data: ${formatDateIT(oldDate)} → ${formatDateIT(newDate)}`
     )
   }
 
@@ -1289,7 +1291,7 @@ export default function ReservationsList({
 
     const confirmed =
       window.confirm(
-        `ATTENZIONE!\n\nVuoi cancellare definitivamente questa prenotazione?\n\nCliente: ${customerName}\nData: ${reservation.reservation_date}\nOra: ${reservationTime}\nCoperti: ${reservation.guests}\nTavoli: ${tableNames}\n\nL'operazione non potrà essere annullata.`
+        `ATTENZIONE!\n\nVuoi cancellare definitivamente questa prenotazione?\n\nCliente: ${customerName}\nData: ${formatDateIT(reservation.reservation_date)}\nOra: ${reservationTime}\nCoperti: ${reservation.guests}\nTavoli: ${tableNames}\n\nL'operazione non potrà essere annullata.`
       )
 
     if (!confirmed) {
@@ -2196,7 +2198,7 @@ export default function ReservationsList({
           }}
         >
           📋 Prenotazioni del{' '}
-          {selectedDate}
+          {formatDateIT(selectedDate)}
         </h2>
       </div>
 
@@ -2330,16 +2332,9 @@ export default function ReservationsList({
               <label>Data</label>
               <br />
 
-              <input
-                type="date"
-                value={
-                  editDate
-                }
-                onChange={e =>
-                  setEditDate(
-                    e.target.value
-                  )
-                }
+              <ItalianDateInput
+                value={editDate}
+                onChange={setEditDate}
                 style={{
                   ...inputStyle,
                   width: 145,
@@ -3516,7 +3511,7 @@ export default function ReservationsList({
                                     ?.full_name ||
                                     'Cliente non trovato'}{' '}
                                   ·{' '}
-                                  {reservation.reservation_date}{' '}
+                                  {formatDateIT(reservation.reservation_date)}{' '}
                                   ·{' '}
                                   {normalizeTime(
                                     reservation.reservation_time
