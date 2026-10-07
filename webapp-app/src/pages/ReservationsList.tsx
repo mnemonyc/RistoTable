@@ -3183,7 +3183,9 @@ export default function ReservationsList({
                         }
                       >
                         {
-                          reservation.reservation_date
+                          formatDateIT(
+                            reservation.reservation_date
+                          )
                         }
                       </td>
 
