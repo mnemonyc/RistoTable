@@ -5,6 +5,8 @@ import {
 } from 'react'
 
 import { supabase } from '../lib/supabase'
+import ItalianDateInput from '../lib/ItalianDateInput'
+import { formatDateIT } from '../lib/dateUtils'
 
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
@@ -1400,7 +1402,7 @@ export default function NewReservation({
           selectedTableIds.length === 1
             ? 'o'
             : 'i'
-        }, ${selectedDate} alle ${selectedTime}.`
+        }, ${formatDateIT(selectedDate)} alle ${selectedTime}.`
       )
 
       setSelectedTableIds([])
@@ -1569,19 +1571,9 @@ export default function NewReservation({
 
             <br />
 
-            <input
-              type="date"
-              value={
-                selectedDate
-              }
-              onChange={e =>
-                handleDateChange(
-                  e.target.value
-                )
-              }
-              style={{
-                padding: 8,
-              }}
+            <ItalianDateInput
+              value={selectedDate}
+              onChange={handleDateChange}
             />
           </div>
 
