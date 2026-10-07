@@ -6,7 +6,6 @@ import TableMap from './TableMap'
 import DashboardStats from './DashboardStats'
 import TableManagement from './TableManagement'
 import ItalianDateInput from '../lib/ItalianDateInput'
-import { formatDateIT } from '../lib/dateUtils'
 
 function getLocalDate(): string {
   const now = new Date()
