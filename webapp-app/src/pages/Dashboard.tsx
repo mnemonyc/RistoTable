@@ -483,7 +483,7 @@ async function printDailyReservations(
 </html>`
   )
 
-  printWindow.document.close()
+  printDocument.close()
 
   try {
     const {
