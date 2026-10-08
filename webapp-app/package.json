@@ -19,7 +19,8 @@
     "@supabase/supabase-js": "^2.117.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "@capgo/capacitor-printer": "^8.1.4"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
