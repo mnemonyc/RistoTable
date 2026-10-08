@@ -1212,40 +1212,6 @@ async function printDailyReservations(
         `
 
 
-        ? `
-          <div class="summary">
-            <div><strong>${sortedReservations.length}</strong> prenotazioni</div>
-            <div><strong>${totalGuests}</strong> coperti</div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Ora</th>
-                <th>Tavolo</th>
-                <th>Cliente / Telefono</th>
-                <th>Coperti</th>
-                <th>Stato</th>
-                <th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows}
-            </tbody>
-          </table>
-
-          ${mapsHtml}
-
-          <div class="footer">
-            Stampato da Prenotazioni da Bacco
-          </div>
-        `
-        : `
-          <div class="empty">
-            Nessuna prenotazione per questa giornata.
-          </div>
-        `
-
     const contentElement =
       printWindow.document.getElementById(
         'print-content'
