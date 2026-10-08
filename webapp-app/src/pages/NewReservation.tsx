@@ -1603,11 +1603,11 @@ export default function NewReservation({
               }}
             >
               <option value="1">
-                Turno 1 — 20:00 / 22:00
+                Turno 1 — {settings.firstShiftStart} / {settings.firstShiftEnd}
               </option>
 
               <option value="2">
-                Turno 2 — 22:00 / 24:00
+                Turno 2 — {settings.secondShiftStart} / {settings.secondShiftEnd}
               </option>
             </select>
           </div>
