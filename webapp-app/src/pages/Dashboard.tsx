@@ -826,7 +826,7 @@ async function printDailyReservations(
                         1 &&
                       reservation.tables.some(
                         item =>
-                          item ===
+                          item.table_name ===
                           table.table_name
                       )
                   )
