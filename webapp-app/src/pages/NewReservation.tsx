@@ -142,44 +142,6 @@ function sortTables(
   )
 }
 
-function generateTimes(
-  startHour: number,
-  endHour: number
-): string[] {
-  const result: string[] = []
-
-  for (
-    let hour = startHour;
-    hour <= endHour;
-    hour++
-  ) {
-    for (
-      let minute = 0;
-      minute < 60;
-      minute += 15
-    ) {
-      if (
-        hour === endHour &&
-        minute > 45
-      ) {
-        continue
-      }
-
-      result.push(
-        `${String(hour).padStart(
-          2,
-          '0'
-        )}:${String(minute).padStart(
-          2,
-          '0'
-        )}`
-      )
-    }
-  }
-
-  return result
-}
-
 function getReservationDateRange(
   date: string
 ): {
