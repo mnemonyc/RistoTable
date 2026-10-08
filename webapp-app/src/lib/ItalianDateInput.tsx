@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from 'react'
 
@@ -27,6 +28,9 @@ export default function ItalianDateInput({
         : ''
     )
 
+  const calendarInputRef =
+    useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     setDraft(
       value
@@ -53,24 +57,103 @@ export default function ItalianDateInput({
     }
   }
 
+  function handleCalendarChange(
+    nextValue: string
+  ) {
+    if (!nextValue) {
+      return
+    }
+
+    setDraft(
+      formatDateOnlyIT(nextValue)
+    )
+    onChange(nextValue)
+  }
+
+  function openCalendar() {
+    const input =
+      calendarInputRef.current
+
+    if (!input) {
+      return
+    }
+
+    if (
+      typeof input.showPicker ===
+      'function'
+    ) {
+      input.showPicker()
+      return
+    }
+
+    input.focus()
+    input.click()
+  }
+
   return (
-    <input
-      type="text"
-      inputMode="numeric"
-      autoComplete="off"
-      maxLength={10}
-      placeholder="GG/MM/AAAA"
-      aria-label="Data in formato GG/MM/AAAA"
-      value={draft}
-      onChange={e =>
-        handleChange(
-          e.target.value
-        )
-      }
+    <div
       style={{
-        padding: 8,
-        ...style,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
       }}
-    />
+    >
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={10}
+        placeholder="GG/MM/AAAA"
+        aria-label="Data in formato GG/MM/AAAA"
+        value={draft}
+        onChange={e =>
+          handleChange(
+            e.target.value
+          )
+        }
+        style={{
+          flex: 1,
+          minWidth: 0,
+          padding: 8,
+          ...style,
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={openCalendar}
+        title="Scegli la data dal calendario"
+        aria-label="Scegli la data dal calendario"
+        style={{
+          flexShrink: 0,
+          minWidth: 42,
+          minHeight: 42,
+          padding: '8px 10px',
+          cursor: 'pointer',
+        }}
+      >
+        📅
+      </button>
+
+      <input
+        ref={calendarInputRef}
+        type="date"
+        value={value || ''}
+        onChange={e =>
+          handleCalendarChange(
+            e.target.value
+          )
+        }
+        tabIndex={-1}
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          opacity: 0,
+          pointerEvents: 'none',
+        }}
+      />
+    </div>
   )
 }
