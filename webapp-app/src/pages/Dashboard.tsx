@@ -733,7 +733,7 @@ async function printDailyReservations(
               printableTables.find(
                 item =>
                   item.table_name ===
-                  table
+                  table.table_name
               )
 
             if (matchingTable) {
@@ -820,12 +820,12 @@ async function printDailyReservations(
                   (tableReservationCount.get(
                     table.id
                   ) || 0) > 0 &&
-                  reservations.some(
-                    reservation =>
+                  sortedReservations.some(
+                    (reservation: PrintableReservation) =>
                       reservation.tables.length >
                         1 &&
                       reservation.tables.some(
-                        item =>
+                        (item: { table_name: string }) =>
                           item.table_name ===
                           table.table_name
                       )
