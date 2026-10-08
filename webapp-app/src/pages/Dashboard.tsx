@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { Printer } from '@capgo/capacitor-printer'
 import NewReservation from './NewReservation'
 import { supabase } from '../lib/supabase'
 import ReservationsList from './ReservationsList'
@@ -201,21 +203,37 @@ function escapeHtml(
 async function printDailyReservations(
   selectedDate: string
 ): Promise<void> {
-  const printWindow =
-    window.open(
-      '',
-      '_blank',
-      'width=1100,height=800'
-    )
+  const isAndroid =
+    Capacitor.getPlatform() === 'android'
 
-  if (!printWindow) {
-    window.alert(
-      'Impossibile aprire la finestra di stampa. Controlla che i popup non siano bloccati.'
-    )
-    return
+  let printWindow: Window | null = null
+  let printDocument: Document
+
+  if (isAndroid) {
+    printDocument =
+      document.implementation.createHTMLDocument(
+        'Prenotazioni da Bacco'
+      )
+  } else {
+    printWindow =
+      window.open(
+        '',
+        '_blank',
+        'width=1100,height=800'
+      )
+
+    if (!printWindow) {
+      window.alert(
+        'Impossibile aprire la finestra di stampa. Controlla che i popup non siano bloccati.'
+      )
+      return
+    }
+
+    printDocument =
+      printWindow.document
   }
 
-  printWindow.document.write(
+  printDocument.write(
     `<!doctype html>
 <html lang="it">
 <head>
@@ -1213,7 +1231,7 @@ async function printDailyReservations(
 
 
     const contentElement =
-      printWindow.document.getElementById(
+      printDocument.getElementById(
         'print-content'
       )
 
@@ -1222,14 +1240,21 @@ async function printDailyReservations(
         content
     }
 
-    printWindow.focus()
+    if (isAndroid) {
+      await Printer.printHtml({
+        name: 'Prenotazioni ' + formatDateIT(selectedDate),
+        html: printDocument.documentElement.outerHTML,
+      })
+    } else if (printWindow) {
+      printWindow.focus()
 
-    window.setTimeout(
-      () => {
-        printWindow.print()
-      },
-      150
-    )
+      window.setTimeout(
+        () => {
+          printWindow?.print()
+        },
+        150
+      )
+    }
   } catch (printError) {
     console.error(
       'ERRORE STAMPA PRENOTAZIONI:',
@@ -1237,7 +1262,7 @@ async function printDailyReservations(
     )
 
     const contentElement =
-      printWindow.document.getElementById(
+      printDocument.getElementById(
         'print-content'
       )
 
