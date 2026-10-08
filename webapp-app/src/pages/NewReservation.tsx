@@ -221,11 +221,12 @@ export default function NewReservation({
 
   const [shift, setShift] =
     useState<'1' | '2'>(
-      initialSelection?.time &&
-        getShiftForTime(
-          initialSelection.time,
-          settings
-        )
+      initialSelection?.time
+        ? getShiftForTime(
+            initialSelection.time,
+            DEFAULT_RESTAURANT_SETTINGS
+          )
+        : '1'
     )
 
   const [guests, setGuests] =
