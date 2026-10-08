@@ -284,6 +284,9 @@ function getStatusLabel(
     case 'completed':
       return 'Completata'
 
+    case 'booked':
+      return 'Prenotata'
+
     default:
       return status
   }
