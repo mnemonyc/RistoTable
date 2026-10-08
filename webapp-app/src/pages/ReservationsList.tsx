@@ -174,6 +174,56 @@ function sortTables(
   )
 }
 
+function sortReservationsByTableAndTime(
+  reservations: ReservationComplete[]
+): ReservationComplete[] {
+  return [...reservations].sort((a, b) => {
+    const aTableKey = (a.tables || [])
+      .map(table => table.table_name)
+      .sort((x, y) =>
+        x.localeCompare(y, 'it', {
+          numeric: true,
+          sensitivity: 'base',
+        })
+      )
+      .join(' + ')
+
+    const bTableKey = (b.tables || [])
+      .map(table => table.table_name)
+      .sort((x, y) =>
+        x.localeCompare(y, 'it', {
+          numeric: true,
+          sensitivity: 'base',
+        })
+      )
+      .join(' + ')
+
+    const aHasTable = aTableKey.length > 0
+    const bHasTable = bTableKey.length > 0
+
+    if (aHasTable !== bHasTable) {
+      return aHasTable ? -1 : 1
+    }
+
+    const tableComparison = aTableKey.localeCompare(
+      bTableKey,
+      'it',
+      {
+        numeric: true,
+        sensitivity: 'base',
+      }
+    )
+
+    if (tableComparison !== 0) {
+      return tableComparison
+    }
+
+    return normalizeTime(a.reservation_time).localeCompare(
+      normalizeTime(b.reservation_time)
+    )
+  })
+}
+
 function generateTimes(
   startHour: number,
   endHour: number
@@ -1112,7 +1162,9 @@ export default function ReservationsList({
       )
 
     setReservations(
-      completeReservations
+      sortReservationsByTableAndTime(
+        completeReservations
+      )
     )
 
     setLoading(false)
