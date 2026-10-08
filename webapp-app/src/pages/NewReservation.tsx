@@ -7,6 +7,13 @@ import {
 import { supabase } from '../lib/supabase'
 import ItalianDateInput from '../lib/ItalianDateInput'
 import { formatDateIT } from '../lib/dateUtils'
+import {
+  DEFAULT_RESTAURANT_SETTINGS,
+  generateTimeOptions,
+  getShiftForTime,
+  loadRestaurantSettings,
+  type RestaurantSettings,
+} from '../lib/restaurantSettings'
 
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
@@ -247,16 +254,16 @@ export default function NewReservation({
   const [selectedTime, setSelectedTime] =
     useState(
       initialSelection?.time ||
-        '20:00'
+        DEFAULT_RESTAURANT_SETTINGS.firstShiftStart
     )
 
   const [shift, setShift] =
     useState<'1' | '2'>(
       initialSelection?.time &&
-        initialSelection.time >=
-          '22:00'
-        ? '2'
-        : '1'
+        getShiftForTime(
+          initialSelection.time,
+          settings
+        )
     )
 
   const [guests, setGuests] =
@@ -318,14 +325,29 @@ export default function NewReservation({
     setLoadingAvailability,
   ] = useState(false)
 
+  const [settings, setSettings] =
+    useState<RestaurantSettings>(
+      DEFAULT_RESTAURANT_SETTINGS
+    )
+
   const shift1Times = useMemo(
-    () => generateTimes(20, 21),
-    []
+    () =>
+      generateTimeOptions(
+        settings.firstShiftStart,
+        settings.firstShiftEnd,
+        settings.timeIntervalMinutes
+      ),
+    [settings]
   )
 
   const shift2Times = useMemo(
-    () => generateTimes(22, 23),
-    []
+    () =>
+      generateTimeOptions(
+        settings.secondShiftStart,
+        settings.secondShiftEnd,
+        settings.timeIntervalMinutes
+      ),
+    [settings]
   )
 
   const availableTimes =
@@ -334,6 +356,26 @@ export default function NewReservation({
       : shift2Times
 
   useEffect(() => {
+    void loadRestaurantSettings().then(
+      loadedSettings => {
+        setSettings(loadedSettings)
+
+        if (!initialSelection) {
+          const firstTime =
+            generateTimeOptions(
+              loadedSettings.firstShiftStart,
+              loadedSettings.firstShiftEnd,
+              loadedSettings.timeIntervalMinutes
+            )[0]
+
+          if (firstTime) {
+            setSelectedTime(firstTime)
+            setShift('1')
+          }
+        }
+      }
+    )
+
     loadInitialData()
   }, [])
 
@@ -358,10 +400,10 @@ export default function NewReservation({
       )
 
       setShift(
-        initialSelection.time >=
-          '22:00'
-          ? '2'
-          : '1'
+        getShiftForTime(
+          initialSelection.time,
+          settings
+        )
       )
     }
   }, [initialSelection])
