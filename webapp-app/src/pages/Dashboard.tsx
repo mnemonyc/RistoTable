@@ -669,7 +669,7 @@ async function printDailyReservations(
 
     const sortedReservations =
       sortPrintableReservations(
-        completeReservations
+        completeReservations as PrintableReservation[]
       )
 
     const totalGuests =
@@ -827,7 +827,7 @@ async function printDailyReservations(
                       reservation.tables.some(
                         item =>
                           item.table_name ===
-                          table.table_name
+                          table.table_name.table_name
                       )
                   )
 
