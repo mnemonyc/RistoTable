@@ -2126,7 +2126,7 @@ export default function NewReservation({
                   position:
                     'relative',
                   width: 920,
-                  height: 370,
+                  height: 600,
                   margin:
                     '0 auto',
                   background:

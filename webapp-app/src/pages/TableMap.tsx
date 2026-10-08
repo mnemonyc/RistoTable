@@ -1361,23 +1361,18 @@ export default function TableMap({
       {/* ================================================== */}
 
       <div
-        style={{
-          position:
-            'relative',
-          width: '100%',
-          maxWidth: 900,
-          minHeight: 500,
-          border:
-            '1px solid #475569',
-          borderRadius: 12,
-          overflow:
-            'auto',
-          background:
-            '#020617',
-          boxShadow:
-            'inset 0 0 40px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.35)',
-        }}
-      >
+  style={{
+    position: 'relative',
+                   width: 920,
+                  height: 600,border: '1px solid #475569',
+    borderRadius: 12,
+    overflow: 'hidden',
+    background: '#020617',
+    boxShadow:
+      'inset 0 0 40px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.35)',
+    boxSizing: 'border-box',
+  }}
+>
         {visibleTables.length ===
         0 ? (
           <div
@@ -1483,39 +1478,8 @@ export default function TableMap({
                     top:
                       table.pos_y,
 
-                    width:
-                      ['T1', 'T2', 'T3'].includes(
-                        table.table_name
-                      )
-                        ? 150
-                        : table.table_name === 'T4'
-                        ? 66
-                        : ['T10', 'T11'].includes(
-                            table.table_name
-                          )
-                        ? 66
-                        : ['T5'].includes(
-                            table.table_name
-                          )
-                        ? 110
-                        : 78,
-
-                    height:
-                      ['T1', 'T2', 'T3'].includes(
-                        table.table_name
-                      )
-                        ? 66
-                        : table.table_name === 'T4'
-                        ? 126
-                        : ['T10', 'T11'].includes(
-                            table.table_name
-                          )
-                        ? 116
-                        : ['T5'].includes(
-                            table.table_name
-                          )
-                        ? 50
-                        : 50,
+                    width: 104,
+                    height: 74,
 
                     backgroundColor,
 
