@@ -31,10 +31,15 @@ function App() {
     }
   }, [])
 
-  return authenticated ? (
-    <Dashboard />
-  ) : (
-    <Login />
+  return (
+    <div className="app-shell">
+      <div className="app-content">
+        {authenticated ? <Dashboard /> : <Login />}
+      </div>
+      <footer className="app-copyright">
+        © 2026 Francesco Colella — Prenotazioni da Bacco™ — Tutti i diritti riservati.
+      </footer>
+    </div>
   )
 }
 
