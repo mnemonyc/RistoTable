@@ -52,6 +52,20 @@ type PrintableReservation = {
   }[]
 }
 
+type PrintableRoom = {
+  id: string
+  room_name: string
+}
+
+type PrintableTable = {
+  id: string
+  room_id: string
+  table_name: string
+  seats: number
+  pos_x: number
+  pos_y: number
+}
+
 function normalizeTime(
   value: string
 ): string {
@@ -247,6 +261,106 @@ async function printDailyReservations(
 
     .summary strong {
       font-size: 13px;
+    }
+
+    .map-section {
+      margin-top: 20px;
+      page-break-inside: avoid;
+    }
+
+    .map-title {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #111827;
+    }
+
+    .map-legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+      font-size: 9px;
+      font-weight: bold;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      display: inline-block;
+      border: 1px solid #374151;
+    }
+
+    .map {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 920 / 600;
+      border: 1px solid #6b7280;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f8fafc;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    .map-table {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 11.304%;
+      height: 12.333%;
+      border-radius: 5px;
+      border: 1.5px solid;
+      font-weight: bold;
+      color: #ffffff;
+      text-align: center;
+      line-height: 1.05;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.65);
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    .map-table .name {
+      font-size: 10px;
+    }
+
+    .map-table .seats {
+      font-size: 7px;
+      margin-top: 2px;
+    }
+
+    .map-table .status {
+      font-size: 6px;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    .map-table.occupied {
+      background: #dc2626;
+      border-color: #991b1b;
+    }
+
+    .map-table.free {
+      background: #16a34a;
+      border-color: #166534;
+    }
+
+    .map-table.grouped {
+      box-shadow: 0 0 0 2px #f59e0b inset;
+    }
+
+    .map-note {
+      margin-top: 7px;
+      color: #4b5563;
+      font-size: 8px;
     }
 
     table {
@@ -566,6 +680,222 @@ async function printDailyReservations(
         0
       )
 
+    const [
+      roomsForPrintResult,
+      tablesForPrintResult,
+    ] = await Promise.all([
+      supabase
+        .from('rooms')
+        .select(
+          'id, room_name'
+        )
+        .eq(
+          'restaurant_id',
+          RESTAURANT_ID
+        )
+        .order('created_at'),
+
+      supabase
+        .from('dining_tables')
+        .select(
+          'id, room_id, table_name, seats, pos_x, pos_y'
+        )
+        .eq(
+          'active',
+          true
+        ),
+    ])
+
+    if (roomsForPrintResult.error) {
+      throw roomsForPrintResult.error
+    }
+
+    if (tablesForPrintResult.error) {
+      throw tablesForPrintResult.error
+    }
+
+    const printableRooms =
+      (roomsForPrintResult.data ||
+        []) as PrintableRoom[]
+
+    const printableTables =
+      (tablesForPrintResult.data ||
+        []) as PrintableTable[]
+
+    const occupiedTableIds =
+      new Set<string>()
+
+    sortedReservations.forEach(
+      reservation => {
+        reservation.tables.forEach(
+          table => {
+            const matchingTable =
+              printableTables.find(
+                item =>
+                  item.table_name ===
+                  table
+              )
+
+            if (matchingTable) {
+              occupiedTableIds.add(
+                matchingTable.id
+              )
+            }
+          }
+        )
+      }
+    )
+
+    links.forEach(link => {
+      if (
+        reservations.some(
+          reservation =>
+            reservation.id ===
+            link.reservation_id
+        )
+      ) {
+        occupiedTableIds.add(
+          link.table_id
+        )
+      }
+    })
+
+    const tableReservationCount =
+      new Map<string, number>()
+
+    links.forEach(link => {
+      tableReservationCount.set(
+        link.table_id,
+        (tableReservationCount.get(
+          link.table_id
+        ) || 0) + 1
+      )
+    })
+
+    reservations.forEach(
+      reservation => {
+        if (
+          reservation.table_id
+        ) {
+          tableReservationCount.set(
+            reservation.table_id,
+            (tableReservationCount.get(
+              reservation.table_id
+            ) || 0) + 1
+          )
+        }
+      }
+    )
+
+    const mapsHtml =
+      printableRooms
+        .map(room => {
+          const roomTables =
+            printableTables
+              .filter(
+                table =>
+                  table.room_id ===
+                  room.id
+              )
+              .sort((a, b) =>
+                a.table_name.localeCompare(
+                  b.table_name,
+                  'it',
+                  {
+                    numeric: true,
+                    sensitivity: 'base',
+                  }
+                )
+              )
+
+          const tablesHtml =
+            roomTables
+              .map(table => {
+                const occupied =
+                  occupiedTableIds.has(
+                    table.id
+                  )
+
+                const grouped =
+                  (tableReservationCount.get(
+                    table.id
+                  ) || 0) > 0 &&
+                  reservations.some(
+                    reservation =>
+                      reservation.tables.length >
+                        1 &&
+                      reservation.tables.some(
+                        item =>
+                          item ===
+                          table.table_name
+                      )
+                  )
+
+                const left =
+                  Math.max(
+                    0,
+                    Math.min(
+                      100,
+                      (table.pos_x /
+                        920) *
+                        100
+                    )
+                  )
+
+                const top =
+                  Math.max(
+                    0,
+                    Math.min(
+                      100,
+                      (table.pos_y /
+                        600) *
+                        100
+                    )
+                  )
+
+                return `
+                  <div
+                    class="map-table ${occupied ? 'occupied' : 'free'}${grouped ? ' grouped' : ''}"
+                    style="left:${left}%;top:${top}%;"
+                    title="${escapeHtml(table.table_name)}"
+                  >
+                    <div class="name">${escapeHtml(table.table_name)}</div>
+                    <div class="seats">${table.seats} coperti</div>
+                    <div class="status">${occupied ? 'Occupato' : 'Libero'}</div>
+                  </div>
+                `
+              })
+              .join('')
+
+          return `
+            <section class="map-section">
+              <h3 class="map-title">Mappa — ${escapeHtml(room.room_name)}</h3>
+              <div class="map-legend">
+                <span class="legend-item">
+                  <span class="legend-dot" style="background:#dc2626"></span>
+                  Occupato
+                </span>
+                <span class="legend-item">
+                  <span class="legend-dot" style="background:#16a34a"></span>
+                  Libero
+                </span>
+                <span class="legend-item">
+                  <span class="legend-dot" style="background:#f59e0b"></span>
+                  Tavolata
+                </span>
+              </div>
+              <div class="map">
+                ${tablesHtml}
+              </div>
+              <div class="map-note">
+                Stato dei tavoli sulla giornata del ${escapeHtml(formatDateIT(selectedDate))}.
+                I tavoli con una o più prenotazioni sono evidenziati in rosso.
+              </div>
+            </section>
+          `
+        })
+        .join('')
+
     const rows =
       sortedReservations
         .map(
@@ -666,6 +996,8 @@ async function printDailyReservations(
               ${rows}
             </tbody>
           </table>
+
+          ${mapsHtml}
 
           <div class="footer">
             Stampato da Prenotazioni da Bacco
