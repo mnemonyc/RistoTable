@@ -8,6 +8,13 @@ import {
 import { supabase } from '../lib/supabase'
 import ItalianDateInput from '../lib/ItalianDateInput'
 import { formatDateIT } from '../lib/dateUtils'
+import {
+  DEFAULT_RESTAURANT_SETTINGS,
+  generateTimeOptions,
+  getShiftForTime,
+  loadRestaurantSettings,
+  type RestaurantSettings,
+} from '../lib/restaurantSettings'
 
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
@@ -759,14 +766,29 @@ export default function ReservationsList({
     setAuditError,
   ] = useState('')
 
+  const [settings, setSettings] =
+    useState<RestaurantSettings>(
+      DEFAULT_RESTAURANT_SETTINGS
+    )
+
   const shift1Times = useMemo(
-    () => generateTimes(20, 21),
-    []
+    () =>
+      generateTimeOptions(
+        settings.firstShiftStart,
+        settings.firstShiftEnd,
+        settings.timeIntervalMinutes
+      ),
+    [settings]
   )
 
   const shift2Times = useMemo(
-    () => generateTimes(22, 23),
-    []
+    () =>
+      generateTimeOptions(
+        settings.secondShiftStart,
+        settings.secondShiftEnd,
+        settings.timeIntervalMinutes
+      ),
+    [settings]
   )
 
   const editAvailableTimes =
@@ -781,6 +803,12 @@ export default function ReservationsList({
    */
 
   useEffect(() => {
+    void loadRestaurantSettings().then(
+      loadedSettings => {
+        setSettings(loadedSettings)
+      }
+    )
+
     loadInitialData()
   }, [])
 
@@ -1471,9 +1499,10 @@ export default function ReservationsList({
     setEditTime(time)
 
     setEditShift(
-      time >= '22:00'
-        ? '2'
-        : '1'
+      getShiftForTime(
+        time,
+        settings
+      )
     )
 
     setEditGuests(
