@@ -413,6 +413,23 @@ async function printDailyReservations(
       font-weight: bold;
     }
 
+    .print-free {
+      color: #166534;
+      background: #dcfce7;
+      font-weight: bold;
+    }
+
+    .print-occupied {
+      color: #991c1c;
+      font-weight: bold;
+    }
+
+    .print-grouped {
+      color: #92400e;
+      background: #fef3c7;
+      font-weight: bold;
+    }
+
     .notes {
       color: #4b5563;
     }
@@ -896,14 +913,93 @@ async function printDailyReservations(
         })
         .join('')
 
-    const rows =
-      sortedReservations
-        .map(
+    const printableTablesSorted = [
+      ...printableTables,
+    ].sort((a, b) =>
+      a.table_name.localeCompare(
+        b.table_name,
+        'it',
+        {
+          numeric: true,
+          sensitivity: 'base',
+        }
+      )
+    )
+
+    const handledReservationIds =
+      new Set<string>()
+
+    const rows: string[] = []
+
+    printableTablesSorted.forEach(
+      table => {
+        const tableReservations =
+          sortedReservations.filter(
+            reservation =>
+              reservation.tables.some(
+                item =>
+                  item.table_name ===
+                  table.table_name
+              )
+          )
+
+        const unhandledReservations =
+          tableReservations.filter(
+            reservation =>
+              !handledReservationIds.has(
+                reservation.id
+              )
+          )
+
+        if (
+          unhandledReservations.length ===
+          0
+        ) {
+          if (
+            tableReservations.length ===
+            0
+          ) {
+            rows.push(
+              '<tr>' +
+              '<td class="time">—</td>' +
+              '<td class="table-name">' +
+              escapeHtml(table.table_name) +
+              '</td>' +
+              '<td>—</td>' +
+              '<td>—</td>' +
+              '<td class="print-free">LIBERO</td>' +
+              '<td class="notes">—</td>' +
+              '</tr>'
+            )
+          }
+
+          return
+        }
+
+        unhandledReservations.forEach(
           reservation => {
             const tableNames =
               getSortedTableNames(
                 reservation
               )
+
+            const isGrouped =
+              tableNames.length > 1
+
+            if (
+              isGrouped &&
+              handledReservationIds.has(
+                reservation.id
+              )
+            ) {
+              return
+            }
+
+            if (isGrouped) {
+              handledReservationIds.add(
+                reservation.id
+              )
+            }
 
             const tableDisplay =
               tableNames.length > 0
@@ -953,28 +1049,169 @@ async function printDailyReservations(
             const statusClass =
               reservation.status ===
               'cancelled'
-                ? ' class="cancelled"'
-                : ''
+                ? 'cancelled'
+                : isGrouped
+                  ? 'print-grouped'
+                  : 'print-occupied'
 
-            return `
-              <tr>
-                <td class="time">${escapeHtml(normalizeTime(reservation.reservation_time))}</td>
-                <td class="table-name">${tableDisplay}</td>
-                <td>
-                  <div class="customer">${customerName}</div>
-                  <div class="phone">${phone}</div>
-                </td>
-                <td>${reservation.guests}</td>
-                <td${statusClass}>${escapeHtml(status)}</td>
-                <td class="notes">${notes}</td>
-              </tr>
-            `
+            rows.push(
+              '<tr>' +
+              '<td class="time">' +
+              escapeHtml(
+                normalizeTime(
+                  reservation.reservation_time
+                )
+              ) +
+              '</td>' +
+              '<td class="table-name">' +
+              tableDisplay +
+              '</td>' +
+              '<td>' +
+              '<div class="customer">' +
+              customerName +
+              '</div>' +
+              '<div class="phone">' +
+              phone +
+              '</div>' +
+              '</td>' +
+              '<td>' +
+              reservation.guests +
+              '</td>' +
+              '<td class="' +
+              statusClass +
+              '">' +
+              escapeHtml(
+                isGrouped
+                  ? 'Tavolata'
+                  : status
+              ) +
+              '</td>' +
+              '<td class="notes">' +
+              notes +
+              '</td>' +
+              '</tr>'
+            )
           }
         )
-        .join('')
+      }
+    )
+
+    sortedReservations
+      .filter(
+        reservation =>
+          reservation.tables.length ===
+          0
+      )
+      .forEach(
+        reservation => {
+          const customerName =
+            escapeHtml(
+              reservation
+                .customer
+                ?.full_name ||
+                'Cliente non trovato'
+            )
+
+          const phone =
+            reservation
+              .customer
+              ?.phone
+              ? escapeHtml(
+                  reservation
+                    .customer
+                    .phone
+                )
+              : '—'
+
+          const notes =
+            reservation.notes
+              ? escapeHtml(
+                  reservation.notes
+                )
+              : '—'
+
+          const status =
+            getStatusLabel(
+              reservation.status
+            )
+
+          const statusClass =
+            reservation.status ===
+            'cancelled'
+              ? 'cancelled'
+              : 'print-occupied'
+
+          rows.push(
+            '<tr>' +
+            '<td class="time">' +
+            escapeHtml(
+              normalizeTime(
+                reservation.reservation_time
+              )
+            ) +
+            '</td>' +
+            '<td class="table-name">—</td>' +
+            '<td>' +
+            '<div class="customer">' +
+            customerName +
+            '</div>' +
+            '<div class="phone">' +
+            phone +
+            '</div>' +
+            '</td>' +
+            '<td>' +
+            reservation.guests +
+            '</td>' +
+            '<td class="' +
+            statusClass +
+            '">' +
+            escapeHtml(status) +
+            '</td>' +
+            '<td class="notes">' +
+            notes +
+            '</td>' +
+            '</tr>'
+          )
+        }
+      )
 
     const content =
-      sortedReservations.length > 0
+      printableTablesSorted.length > 0
+        ? `
+          <div class="summary">
+            <div><strong>${sortedReservations.length}</strong> prenotazioni</div>
+            <div><strong>${totalGuests}</strong> coperti</div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Ora</th>
+                <th>Tavolo</th>
+                <th>Cliente / Telefono</th>
+                <th>Coperti</th>
+                <th>Stato</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.join('')}
+            </tbody>
+          </table>
+
+          ${mapsHtml}
+
+          <div class="footer">
+            Stampato da Prenotazioni da Bacco
+          </div>
+        `
+        : `
+          <div class="empty">
+            Nessun tavolo disponibile per questa giornata.
+          </div>
+        `
+
+
         ? `
           <div class="summary">
             <div><strong>${sortedReservations.length}</strong> prenotazioni</div>
