@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatDateIT } from '../lib/dateUtils'
+import {
+  DEFAULT_RESTAURANT_SETTINGS,
+  generateTimeOptions,
+  loadRestaurantSettings,
+  type RestaurantSettings,
+} from '../lib/restaurantSettings'
 
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
@@ -147,8 +153,15 @@ export default function TableMap({
     ReservationTableLink[]
   >([])
 
+  const [settings, setSettings] =
+    useState<RestaurantSettings>(
+      DEFAULT_RESTAURANT_SETTINGS
+    )
+
   const [selectedTime, setSelectedTime] =
-    useState('20:00')
+    useState(
+      DEFAULT_RESTAURANT_SETTINGS.firstShiftStart
+    )
 
   const [guests, setGuests] =
     useState(2)
@@ -171,6 +184,23 @@ export default function TableMap({
    */
 
   useEffect(() => {
+    void loadRestaurantSettings().then(
+      loadedSettings => {
+        setSettings(loadedSettings)
+
+        const firstTime =
+          generateTimeOptions(
+            loadedSettings.firstShiftStart,
+            loadedSettings.firstShiftEnd,
+            loadedSettings.timeIntervalMinutes
+          )[0]
+
+        if (firstTime) {
+          setSelectedTime(firstTime)
+        }
+      }
+    )
+
     loadRooms()
     loadTables()
   }, [])
@@ -761,22 +791,16 @@ export default function TableMap({
    */
 
   const timeOptions = [
-    '20:00',
-    '20:15',
-    '20:30',
-    '20:45',
-    '21:00',
-    '21:15',
-    '21:30',
-    '21:45',
-    '22:00',
-    '22:15',
-    '22:30',
-    '22:45',
-    '23:00',
-    '23:15',
-    '23:30',
-    '23:45',
+    ...generateTimeOptions(
+      settings.firstShiftStart,
+      settings.firstShiftEnd,
+      settings.timeIntervalMinutes
+    ),
+    ...generateTimeOptions(
+      settings.secondShiftStart,
+      settings.secondShiftEnd,
+      settings.timeIntervalMinutes
+    ),
   ]
 
   /*
