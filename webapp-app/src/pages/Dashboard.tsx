@@ -399,7 +399,7 @@ async function printDailyReservations(
       padding: 8px 7px;
       border: 1px solid #d1d5db;
       vertical-align: top;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .reservation-list tr {
@@ -420,13 +420,13 @@ async function printDailyReservations(
 
     .reservation-list .customer {
       font-weight: bold;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .reservation-list .phone {
       color: #4b5563;
       margin-top: 3px;
-      font-size: 11px;
+      font-size: 14px;
     }
 
     .cancelled {
