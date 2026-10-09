@@ -244,7 +244,7 @@ function openWhatsAppConfirmation(
     return
   }
 
-  let phone = rawPhone.replace(/\\D/g, '')
+  let phone = rawPhone.replace(/\D/g, '')
 
   if (phone.startsWith('00')) {
     phone = phone.slice(2)
@@ -272,7 +272,7 @@ function openWhatsAppConfirmation(
     )
 
   const tableLine = tableNames.length > 0
-    ? `\\n🪑 Tavolo${tableNames.length > 1 ? ' / tavolata' : ''}: ${tableNames.join(' + ')}`
+    ? `\n🪑 Tavolo${tableNames.length > 1 ? ' / tavolata' : ''}: ${tableNames.join(' + ')}`
     : ''
 
   const message = [
@@ -285,7 +285,7 @@ function openWhatsAppConfirmation(
     `👥 Coperti: ${reservation.guests}${tableLine}`,
     '',
     'Ti aspettiamo! Grazie e a presto. 🍷',
-  ].join('\\n')
+  ].join('\n')
 
   const url =
     `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
