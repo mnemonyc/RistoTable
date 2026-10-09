@@ -1363,6 +1363,10 @@ export default function Dashboard() {
       <div
         style={{
           marginBottom: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 8,
         }}
       >
         <label>
@@ -1373,9 +1377,8 @@ export default function Dashboard() {
           value={selectedDate}
           onChange={setSelectedDate}
           style={{
-            marginLeft: 10,
             padding: 6,
-            width: 110,
+            width: 140,
           }}
         />
       </div>
@@ -1391,6 +1394,7 @@ export default function Dashboard() {
           display: 'flex',
           gap: 10,
           flexWrap: 'wrap',
+          justifyContent: 'center',
           marginTop: 20,
         }}
       >
