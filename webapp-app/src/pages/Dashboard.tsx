@@ -954,6 +954,23 @@ async function printDailyReservations(
 
     printableTablesSorted.forEach(
       table => {
+        const normalizedTableName =
+          table.table_name.trim().toUpperCase()
+
+        if (normalizedTableName === 'T20') {
+          rows.push(
+            '<tr class="print-section">' +
+            '<td colspan="6" style="padding:8px 10px;background:#e5e7eb;color:#111827;font-weight:bold;text-align:left;border-top:2px solid #64748b;border-bottom:1px solid #94a3b8;">PORTICO</td>' +
+            '</tr>'
+          )
+        } else if (normalizedTableName === 'T30') {
+          rows.push(
+            '<tr class="print-section">' +
+            '<td colspan="6" style="padding:8px 10px;background:#e5e7eb;color:#111827;font-weight:bold;text-align:left;border-top:2px solid #64748b;border-bottom:1px solid #94a3b8;">DEHORS</td>' +
+            '</tr>'
+          )
+        }
+
         const tableReservations =
           sortedReservations.filter(
             reservation =>
