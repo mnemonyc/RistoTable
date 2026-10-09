@@ -231,6 +231,68 @@ function sortReservationsByTableAndTime(
   })
 }
 
+function openWhatsAppConfirmation(
+  reservation: ReservationComplete
+) {
+  const rawPhone =
+    reservation.customer?.phone?.trim() || ''
+
+  if (!rawPhone) {
+    window.alert(
+      'Questo cliente non ha un numero di telefono salvato.'
+    )
+    return
+  }
+
+  let phone = rawPhone.replace(/\\D/g, '')
+
+  if (phone.startsWith('00')) {
+    phone = phone.slice(2)
+  } else if (
+    !phone.startsWith('39') &&
+    (phone.startsWith('3') || phone.startsWith('0'))
+  ) {
+    phone = '39' + phone
+  }
+
+  if (phone.length < 8) {
+    window.alert(
+      'Il numero di telefono salvato non sembra valido. Controllalo nella scheda cliente.'
+    )
+    return
+  }
+
+  const tableNames = (reservation.tables || [])
+    .map(table => table.table_name)
+    .sort((a, b) =>
+      a.localeCompare(b, 'it', {
+        numeric: true,
+        sensitivity: 'base',
+      })
+    )
+
+  const tableLine = tableNames.length > 0
+    ? `\\n🪑 Tavolo${tableNames.length > 1 ? ' / tavolata' : ''}: ${tableNames.join(' + ')}`
+    : ''
+
+  const message = [
+    `Buongiorno ${reservation.customer?.full_name || '!' },`,
+    '',
+    'ti confermiamo la prenotazione presso BACCO IL TEMPIO DEL PANZEROTTO.',
+    '',
+    `📅 Data: ${formatDateIT(reservation.reservation_date)}`,
+    `🕒 Orario: ${normalizeTime(reservation.reservation_time)}`,
+    `👥 Coperti: ${reservation.guests}${tableLine}`,
+    '',
+    'Ti aspettiamo! Grazie e a presto. 🍷',
+  ].join('\\n')
+
+  const url =
+    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 function getStatusLabel(
   status: string
 ): string {
@@ -3406,6 +3468,39 @@ export default function ReservationsList({
                             }}
                           >
                             ✏️ Modifica
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openWhatsAppConfirmation(
+                                reservation
+                              )
+                            }
+                            disabled={
+                              deletingReservationId ===
+                              reservation.id
+                            }
+                            style={{
+                              padding:
+                                '7px 11px',
+                              border:
+                                '1px solid #22c55e',
+                              borderRadius:
+                                6,
+                              background:
+                                '#14532d',
+                              color:
+                                '#dcfce7',
+                              cursor:
+                                'pointer',
+                              whiteSpace:
+                                'nowrap',
+                              fontWeight:
+                                'bold',
+                            }}
+                          >
+                            🟢 Conferma WhatsApp
                           </button>
 
                           <button
