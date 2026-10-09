@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { formatDateIT } from '../lib/dateUtils'
 import {
@@ -226,6 +226,17 @@ export default function TableMap({
    * CAMBIO DATA / ORARIO
    * ========================================================
    */
+
+  const previousSelectedDate = useRef(selectedDate)
+
+  useEffect(() => {
+    if (previousSelectedDate.current !== selectedDate) {
+      previousSelectedDate.current = selectedDate
+      // Per una data diversa da oggi riparti dall'apertura del servizio,
+      // invece di mantenere l'orario calcolato per il momento corrente.
+      setSelectedTime(settings.firstShiftStart)
+    }
+  }, [selectedDate, settings.firstShiftStart])
 
   useEffect(() => {
     loadReservations()
