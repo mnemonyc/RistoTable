@@ -386,44 +386,47 @@ async function printDailyReservations(
       border-collapse: collapse;
     }
 
-    th {
-      padding: 7px 6px;
+    .reservation-list th {
+      padding: 8px 7px;
       text-align: left;
       background: #e5e7eb;
       border: 1px solid #9ca3af;
-      font-size: 10px;
+      font-size: 12px;
       text-transform: uppercase;
     }
 
-    td {
-      padding: 7px 6px;
+    .reservation-list td {
+      padding: 8px 7px;
       border: 1px solid #d1d5db;
       vertical-align: top;
+      font-size: 12px;
     }
 
-    tr {
+    .reservation-list tr {
       page-break-inside: avoid;
     }
 
-    .time {
+    .reservation-list .time {
       font-weight: bold;
-      font-size: 13px;
+      font-size: 15px;
       white-space: nowrap;
     }
 
-    .table-name {
+    .reservation-list .table-name {
       font-weight: bold;
-      font-size: 13px;
+      font-size: 15px;
       color: #111827;
     }
 
-    .customer {
+    .reservation-list .customer {
       font-weight: bold;
+      font-size: 12px;
     }
 
-    .phone {
+    .reservation-list .phone {
       color: #4b5563;
-      margin-top: 2px;
+      margin-top: 3px;
+      font-size: 11px;
     }
 
     .cancelled {
@@ -1201,7 +1204,7 @@ async function printDailyReservations(
             <div><strong>${totalGuests}</strong> coperti</div>
           </div>
 
-          <table>
+          <table class="reservation-list">
             <thead>
               <tr>
                 <th>Ora</th>
