@@ -188,16 +188,32 @@ export default function TableMap({
       loadedSettings => {
         setSettings(loadedSettings)
 
-        const firstTime =
-          generateTimeOptions(
+        const timeOptions = [
+          ...generateTimeOptions(
             loadedSettings.firstShiftStart,
             loadedSettings.firstShiftEnd,
             loadedSettings.timeIntervalMinutes
-          )[0]
+          ),
+          ...generateTimeOptions(
+            loadedSettings.secondShiftStart,
+            loadedSettings.secondShiftEnd,
+            loadedSettings.timeIntervalMinutes
+          ),
+        ]
 
-        if (firstTime) {
-          setSelectedTime(firstTime)
-        }
+        // All'apertura/refresh seleziona il primo orario di servizio
+        // uguale o successivo all'ora locale corrente.
+        const now = new Date()
+        const currentMinutes =
+          now.getHours() * 60 + now.getMinutes()
+
+        const nextTime = timeOptions.find(time => {
+          const [hour, minute] = time.split(':').map(Number)
+          return hour * 60 + minute >= currentMinutes
+        })
+
+        // Se il servizio è terminato, riparti dal primo turno.
+        setSelectedTime(nextTime || timeOptions[0] || loadedSettings.firstShiftStart)
       }
     )
 
