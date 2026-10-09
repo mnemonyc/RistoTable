@@ -96,6 +96,8 @@ export default function ItalianDateInput({
         display: 'flex',
         alignItems: 'center',
         gap: 6,
+        width: 230,
+        maxWidth: '100%',
       }}
     >
       <input
@@ -114,6 +116,7 @@ export default function ItalianDateInput({
         style={{
           flex: 1,
           minWidth: 0,
+          boxSizing: 'border-box',
           padding: 8,
           ...style,
         }}
