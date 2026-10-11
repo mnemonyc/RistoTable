@@ -275,16 +275,33 @@ function openWhatsAppConfirmation(
     ? `\n🪑 Tavolo${tableNames.length > 1 ? ' / tavolata' : ''}: ${tableNames.join(' + ')}`
     : ''
 
+  const now = new Date()
+  const currentMinutes =
+    now.getHours() * 60 + now.getMinutes()
+  const greeting =
+    currentMinutes >= 5 * 60 &&
+    currentMinutes < 12 * 60
+      ? 'Buongiorno'
+      : 'Buonasera'
+
+  const customerName =
+    reservation.customer?.full_name?.trim() || ''
+  const nameParts = customerName.split(/\s+/).filter(Boolean)
+  const surname =
+    nameParts.length > 1
+      ? nameParts[nameParts.length - 1]
+      : customerName
+
   const message = [
-    `Buongiorno ${reservation.customer?.full_name || '!' },`,
+    `${greeting} Sig. ${surname || 'Cliente'},`,
     '',
-    'ti confermiamo la prenotazione presso BACCO IL TEMPIO DEL PANZEROTTO.',
+    'Vi confermiamo la prenotazione presso BACCO IL TEMPIO DEL PANZEROTTO.',
     '',
     `📅 Data: ${formatDateIT(reservation.reservation_date)}`,
     `🕒 Orario: ${normalizeTime(reservation.reservation_time)}`,
     `👥 Coperti: ${reservation.guests}${tableLine}`,
     '',
-    'Ti aspettiamo! Grazie e a presto. 🍷',
+    'Vi aspettiamo! Grazie e a presto. 🍷',
   ].join('\n')
 
   const url =
