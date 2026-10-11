@@ -27,10 +27,6 @@ function parseLocalDateTime(date: string, time: string): Date {
   return new Date(`${date}T${time.slice(0, 5)}:00`)
 }
 
-function intervalsOverlap(startA: Date, endA: Date, startB: Date, endB: Date): boolean {
-  return startA < endB && endA > startA && startA < endB && endA > startB
-}
-
 export default function DashboardStats({ selectedDate }: Props) {
   const [reservations, setReservations] = useState(0)
   const [guests, setGuests] = useState(0)
