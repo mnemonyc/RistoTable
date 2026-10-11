@@ -220,12 +220,24 @@ export default function ItalianDateInput({
 
       for (const date of greenDates) {
         const occupied = tablesByDateShift.get(date)
-        const firstFull = tableIds.length > 0 && occupied?.first.size === tableIds.length
-        const secondFull = tableIds.length > 0 && occupied?.second.size === tableIds.length
+        const firstFull =
+          tableIds.length > 0 &&
+          occupied?.first.size === tableIds.length
+        const secondFull =
+          tableIds.length > 0 &&
+          occupied?.second.size === tableIds.length
 
-        if (firstFull && secondFull) levels.set(date, 'red')
-        else if (firstFull) levels.set(date, 'yellow')
-        else levels.set(date, 'green')
+        // Il verde è il livello predefinito per QUALSIASI prenotazione
+        // della giornata, anche se presente soltanto nel secondo turno.
+        // Giallo e rosso sostituiscono il verde solo quando il primo turno
+        // è completo, rispettivamente con uno o entrambi i turni completi.
+        levels.set(date, 'green')
+
+        if (firstFull && secondFull) {
+          levels.set(date, 'red')
+        } else if (firstFull) {
+          levels.set(date, 'yellow')
+        }
       }
 
       setReservationDates(greenDates)
@@ -467,7 +479,7 @@ export default function ItalianDateInput({
             }}
           >
             {[
-              { color: '#16a34a', label: 'Verde: ci sono prenotazioni' },
+              { color: '#16a34a', label: 'Verde: almeno una prenotazione nella giornata (qualsiasi turno)' },
               { color: '#eab308', label: 'Giallo: primo turno completo' },
               { color: '#dc2626', label: 'Rosso: entrambi i turni completi' },
             ].map(item => (
