@@ -11,6 +11,10 @@ import {
   parseDateIT,
 } from './dateUtils'
 import { supabase } from './supabase'
+import {
+  DEFAULT_RESTAURANT_SETTINGS,
+  loadRestaurantSettings,
+} from './restaurantSettings'
 
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
@@ -58,6 +62,9 @@ export default function ItalianDateInput({
   )
   const [reservationDates, setReservationDates] = useState<Set<string>>(
     new Set()
+  )
+  const [dayLevels, setDayLevels] = useState<Map<string, 'green' | 'yellow' | 'red'>>(
+    new Map()
   )
   const [loadingDates, setLoadingDates] = useState(false)
   const calendarRef = useRef<HTMLDivElement>(null)
@@ -111,27 +118,119 @@ export default function ItalianDateInput({
         new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0)
       )
 
-      const { data, error } = await supabase
-        .from('reservations')
-        .select('reservation_date')
-        .eq('restaurant_id', RESTAURANT_ID)
-        .gte('reservation_date', firstDay)
-        .lte('reservation_date', lastDay)
-        .neq('status', 'cancelled')
+      const settings = await loadRestaurantSettings().catch(() => DEFAULT_RESTAURANT_SETTINGS)
+
+      const [reservationsResult, roomsResult] = await Promise.all([
+        supabase
+          .from('reservations')
+          .select('id, reservation_date, reservation_time, table_id, status')
+          .eq('restaurant_id', RESTAURANT_ID)
+          .gte('reservation_date', firstDay)
+          .lte('reservation_date', lastDay)
+          .neq('status', 'cancelled'),
+        supabase
+          .from('rooms')
+          .select('id')
+          .eq('restaurant_id', RESTAURANT_ID),
+      ])
 
       if (cancelled) return
 
-      if (error) {
-        console.error('Errore caricamento date con prenotazioni:', error)
-        setReservationDates(new Set())
-      } else {
-        setReservationDates(
-          new Set(
-            (data || []).map(item => item.reservation_date)
-          )
+      if (reservationsResult.error || roomsResult.error) {
+        console.error(
+          'Errore caricamento calendario prenotazioni:',
+          reservationsResult.error || roomsResult.error
         )
+        setReservationDates(new Set())
+        setDayLevels(new Map())
+        setLoadingDates(false)
+        return
       }
 
+      const reservations = reservationsResult.data || []
+      const roomIds = (roomsResult.data || []).map(room => room.id)
+      const tablesResult = roomIds.length
+        ? await supabase
+            .from('dining_tables')
+            .select('id')
+            .in('room_id', roomIds)
+            .eq('active', true)
+        : { data: [], error: null }
+
+      if (cancelled) return
+
+      if (tablesResult.error) {
+        console.error('Errore caricamento tavoli calendario:', tablesResult.error)
+        setReservationDates(new Set(reservations.map(item => item.reservation_date)))
+        setDayLevels(new Map())
+        setLoadingDates(false)
+        return
+      }
+
+      const tableIds = (tablesResult.data || []).map(table => table.id)
+      const reservationIds = reservations.map(item => item.id)
+      const linksResult = reservationIds.length
+        ? await supabase
+            .from('reservation_tables')
+            .select('reservation_id, table_id')
+            .in('reservation_id', reservationIds)
+        : { data: [], error: null }
+
+      if (cancelled) return
+
+      if (linksResult.error) {
+        console.error('Errore caricamento tavoli associati:', linksResult.error)
+        setReservationDates(new Set(reservations.map(item => item.reservation_date)))
+        setDayLevels(new Map())
+        setLoadingDates(false)
+        return
+      }
+
+      const links = linksResult.data || []
+      const firstStart = settings.firstShiftStart || DEFAULT_RESTAURANT_SETTINGS.firstShiftStart
+      const secondStart = settings.secondShiftStart || DEFAULT_RESTAURANT_SETTINGS.secondShiftStart
+      const greenDates = new Set<string>()
+      const levels = new Map<string, 'green' | 'yellow' | 'red'>()
+
+      const tablesByDateShift = new Map<string, { first: Set<string>; second: Set<string> }>()
+
+      for (const reservation of reservations) {
+        const date = reservation.reservation_date
+        greenDates.add(date)
+
+        const time = String(reservation.reservation_time || '').slice(0, 5)
+        const shift = time < secondStart ? 'first' : 'second'
+        const usedTables = new Set<string>()
+
+        if (reservation.table_id) usedTables.add(reservation.table_id)
+        for (const link of links) {
+          if (link.reservation_id === reservation.id) usedTables.add(link.table_id)
+        }
+
+        const key = date
+        if (!tablesByDateShift.has(key)) {
+          tablesByDateShift.set(key, { first: new Set(), second: new Set() })
+        }
+        const day = tablesByDateShift.get(key)!
+        const target = shift === 'first' ? day.first : day.second
+
+        for (const tableId of usedTables) {
+          if (tableIds.includes(tableId)) target.add(tableId)
+        }
+      }
+
+      for (const date of greenDates) {
+        const occupied = tablesByDateShift.get(date)
+        const firstFull = tableIds.length > 0 && occupied?.first.size === tableIds.length
+        const secondFull = tableIds.length > 0 && occupied?.second.size === tableIds.length
+
+        if (firstFull && secondFull) levels.set(date, 'red')
+        else if (firstFull) levels.set(date, 'yellow')
+        else levels.set(date, 'green')
+      }
+
+      setReservationDates(greenDates)
+      setDayLevels(levels)
       setLoadingDates(false)
     }
 
@@ -309,6 +408,8 @@ export default function ItalianDateInput({
               const dayNumber = Number(day.slice(-2))
               const isSelected = day === value
               const hasReservations = reservationDates.has(day)
+              const dayLevel = dayLevels.get(day) || (hasReservations ? 'green' : undefined)
+              const dotColor = dayLevel === 'red' ? '#dc2626' : dayLevel === 'yellow' ? '#eab308' : '#16a34a'
               const isToday = day === today
 
               return (
@@ -318,7 +419,7 @@ export default function ItalianDateInput({
                   onClick={() => chooseDate(day)}
                   aria-label={`${formatDateOnlyIT(day)}${hasReservations ? ', con prenotazioni' : ''}`}
                   aria-pressed={isSelected}
-                  title={hasReservations ? 'Sono presenti prenotazioni' : undefined}
+                  title={dayLevel === 'red' ? 'Entrambi i turni completi' : dayLevel === 'yellow' ? 'Primo turno completo' : hasReservations ? 'Sono presenti prenotazioni' : undefined}
                   style={{
                     position: 'relative',
                     minWidth: 0,
@@ -343,7 +444,7 @@ export default function ItalianDateInput({
                         width: 6,
                         height: 6,
                         borderRadius: '50%',
-                        background: '#16a34a',
+                        background: dotColor,
                         left: '50%',
                         bottom: 3,
                         transform: 'translateX(-50%)',
@@ -357,8 +458,7 @@ export default function ItalianDateInput({
 
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
+              display: 'grid',
               gap: 7,
               marginTop: 12,
               paddingTop: 10,
@@ -367,19 +467,27 @@ export default function ItalianDateInput({
               color: '#475569',
             }}
           >
-            <span
-              aria-hidden="true"
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: '#16a34a',
-                flexShrink: 0,
-              }}
-            />
-            Giorno con prenotazioni
+            {[
+              { color: '#16a34a', label: 'Verde: ci sono prenotazioni' },
+              { color: '#eab308', label: 'Giallo: primo turno completo' },
+              { color: '#dc2626', label: 'Rosso: entrambi i turni completi' },
+            ].map(item => (
+              <div key={item.color} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: item.color,
+                    flexShrink: 0,
+                  }}
+                />
+                {item.label}
+              </div>
+            ))}
             {loadingDates && (
-              <span style={{ marginLeft: 'auto' }}>Aggiornamento…</span>
+              <span style={{ marginTop: 2 }}>Aggiornamento…</span>
             )}
           </div>
 
