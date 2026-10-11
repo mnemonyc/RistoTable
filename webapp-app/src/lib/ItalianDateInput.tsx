@@ -187,7 +187,6 @@ export default function ItalianDateInput({
       }
 
       const links = linksResult.data || []
-      const firstStart = settings.firstShiftStart || DEFAULT_RESTAURANT_SETTINGS.firstShiftStart
       const secondStart = settings.secondShiftStart || DEFAULT_RESTAURANT_SETTINGS.secondShiftStart
       const greenDates = new Set<string>()
       const levels = new Map<string, 'green' | 'yellow' | 'red'>()
