@@ -262,15 +262,6 @@ function openWhatsAppConfirmation(
     return
   }
 
-  const tableNames = (reservation.tables || [])
-    .map(table => table.table_name)
-    .sort((a, b) =>
-      a.localeCompare(b, 'it', {
-        numeric: true,
-        sensitivity: 'base',
-      })
-    )
-
 
 
   const now = new Date()
