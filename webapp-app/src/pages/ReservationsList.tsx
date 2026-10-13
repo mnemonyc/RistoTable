@@ -271,9 +271,7 @@ function openWhatsAppConfirmation(
       })
     )
 
-  const tableLine = tableNames.length > 0
-    ? `\n🪑 Tavolo${tableNames.length > 1 ? ' / tavolata' : ''}: ${tableNames.join(' + ')}`
-    : ''
+
 
   const now = new Date()
   const currentMinutes =
@@ -299,9 +297,11 @@ function openWhatsAppConfirmation(
     '',
     `📅 Data: ${formatDateIT(reservation.reservation_date)}`,
     `🕒 Orario: ${normalizeTime(reservation.reservation_time)}`,
-    `👥 Coperti: ${reservation.guests}${tableLine}`,
+    `👥 Coperti: ${reservation.guests}`,
     '',
-    'Vi aspettiamo! Grazie e a presto. 🍷',
+    'Vi aspettiamo!',
+    'Memorizza questo numero per le prossime prenotazioni.',
+    'Grazie e a presto. 🍷',
   ].join('\n')
 
   const url =
