@@ -291,7 +291,7 @@ function openWhatsAppConfirmation(
     `👥 Coperti: ${reservation.guests}`,
     '',
     'Vi aspettiamo!',
-    'Memorizza questo numero per le prossime prenotazioni.',
+    'Memorizza questo numero per le prossime prenotazioni 😉',
     'Si chiede la massima puntualità.',
     'Grazie e a presto. 🍷',
   ].join('\n')
