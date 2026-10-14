@@ -347,16 +347,16 @@ async function printDailyReservations(
     }
 
     .map-table .name {
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .map-table .seats {
-      font-size: 9px;
+      font-size: 11px;
       margin-top: 2px;
     }
 
     .map-table .status {
-      font-size: 8px;
+      font-size: 10px;
       margin-top: 2px;
       text-transform: uppercase;
     }
