@@ -337,7 +337,7 @@ function openWhatsAppReminder(
     reservation.customer?.full_name?.trim() || 'Cliente'
 
   const message =
-    `Buongiorno sig. ${customerName}, le chiediamo gentilmente di confermare la prenotazione da Bacco (${normalizeTime(reservation.reservation_time)} e ${reservation.guests} coperti). Grazie, l'aspettiamo questa sera. 🤗`
+    `Buongiorno sig. ${customerName}, le chiediamo gentilmente di confermare la prenotazione da Bacco (ore ${normalizeTime(reservation.reservation_time)} e ${reservation.guests} coperti). Grazie, l'aspettiamo questa sera. 🤗`
 
   const url =
     `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
