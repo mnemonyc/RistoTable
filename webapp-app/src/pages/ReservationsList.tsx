@@ -302,6 +302,49 @@ function openWhatsAppConfirmation(
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
+function openWhatsAppReminder(
+  reservation: ReservationComplete
+) {
+  const rawPhone =
+    reservation.customer?.phone?.trim() || ''
+
+  if (!rawPhone) {
+    window.alert(
+      'Questo cliente non ha un numero di telefono salvato.'
+    )
+    return
+  }
+
+  let phone = rawPhone.replace(/\D/g, '')
+
+  if (phone.startsWith('00')) {
+    phone = phone.slice(2)
+  } else if (
+    !phone.startsWith('39') &&
+    (phone.startsWith('3') || phone.startsWith('0'))
+  ) {
+    phone = '39' + phone
+  }
+
+  if (phone.length < 8) {
+    window.alert(
+      'Il numero di telefono salvato non sembra valido. Controllalo nella scheda cliente.'
+    )
+    return
+  }
+
+  const customerName =
+    reservation.customer?.full_name?.trim() || 'Cliente'
+
+  const message =
+    `Buongiorno sig. ${customerName}, le chiediamo gentilmente di confermare la prenotazione da Bacco (${normalizeTime(reservation.reservation_time)} e ${reservation.guests} coperti). Grazie, l'aspettiamo questa sera. 🤗`
+
+  const url =
+    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 function getStatusLabel(
   status: string
 ): string {
@@ -3510,6 +3553,39 @@ export default function ReservationsList({
                             }}
                           >
                             🟢 Conferma WhatsApp
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openWhatsAppReminder(
+                                reservation
+                              )
+                            }
+                            disabled={
+                              deletingReservationId ===
+                              reservation.id
+                            }
+                            style={{
+                              padding:
+                                '7px 11px',
+                              border:
+                                '1px solid #f59e0b',
+                              borderRadius:
+                                6,
+                              background:
+                                '#78350f',
+                              color:
+                                '#fef3c7',
+                              cursor:
+                                'pointer',
+                              whiteSpace:
+                                'nowrap',
+                              fontWeight:
+                                'bold',
+                            }}
+                          >
+                            🔔 Reminder
                           </button>
 
                           <button
