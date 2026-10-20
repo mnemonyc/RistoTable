@@ -286,18 +286,18 @@ function openWhatsAppConfirmation(
     '',
     'Vi confermiamo la prenotazione presso BACCO IL TEMPIO DEL PANZEROTTO.',
     '',
-    `📅 Data: ${formatDateIT(reservation.reservation_date)}`,
-    `🕒 Orario: ${normalizeTime(reservation.reservation_time)}`,
-    `👥 Coperti: ${reservation.guests}`,
+    `\u{1F4C5} Data: ${formatDateIT(reservation.reservation_date)}`,
+    `\u{1F552} Orario: ${normalizeTime(reservation.reservation_time)}`,
+    `\u{1F465} Coperti: ${reservation.guests}`,
     '',
     'Vi aspettiamo!',
-    'Memorizza questo numero per le prossime prenotazioni 😉',
+    'Memorizza questo numero per le prossime prenotazioni \u{1F609}',
     'Si chiede la massima puntualità.',
-    'Grazie e a presto. 🍷',
+    'Grazie e a presto. \u{1F377}',
   ].join('\n')
 
   const url =
-    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+    `https://wa.me/${phone}?${new URLSearchParams({ text: message }).toString()}`
 
   window.open(url, '_blank', 'noopener,noreferrer')
 }
@@ -337,7 +337,7 @@ function openWhatsAppReminder(
     reservation.customer?.full_name?.trim() || 'Cliente'
 
   const message =
-    `Buongiorno sig. ${customerName}, le chiediamo gentilmente di confermare la prenotazione da Bacco (ore ${normalizeTime(reservation.reservation_time)} e ${reservation.guests} coperti). Grazie, l'aspettiamo questa sera. 🤗`
+    `Buongiorno sig. ${customerName}, le chiediamo gentilmente di confermare la prenotazione da Bacco (ore ${normalizeTime(reservation.reservation_time)} e ${reservation.guests} coperti). Grazie, l'aspettiamo questa sera. \u{1F917}`
 
   const url =
     `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
