@@ -1029,11 +1029,11 @@ async function printDailyReservations(
             printOnlyReleaseReservations.push({
               id: `print-release-${table.id}-${releaseMinutes}`,
               reservation_time: `${releaseHour}:${releaseMinute}`,
-              guests: 0,
-              notes: 'PRIMO ORARIO DISPONIBILE',
+              guests: table.seats,
+              notes: null,
               status: 'print_available',
               customer: {
-                full_name: 'DISPONIBILE',
+                full_name: '',
                 phone: null,
               },
               tables: [{
@@ -1157,30 +1157,26 @@ async function printDailyReservations(
                 : '—'
 
             const customerName =
-              escapeHtml(
-                reservation
-                  .customer
-                  ?.full_name ||
-                  'Cliente non trovato'
-              )
+              reservation.status === 'print_available'
+                ? ''
+                : escapeHtml(
+                    reservation.customer?.full_name ||
+                    'Cliente non trovato'
+                  )
 
             const phone =
-              reservation
-                .customer
-                ?.phone
-                ? escapeHtml(
-                    reservation
-                      .customer
-                      .phone
-                  )
-                : '—'
+              reservation.status === 'print_available'
+                ? ''
+                : reservation.customer?.phone
+                  ? escapeHtml(reservation.customer.phone)
+                  : '—'
 
             const notes =
-              reservation.notes
-                ? escapeHtml(
-                    reservation.notes
-                  )
-                : '—'
+              reservation.status === 'print_available'
+                ? ''
+                : reservation.notes
+                  ? escapeHtml(reservation.notes)
+                  : '—'
 
             const status =
               reservation.status === 'print_available'
@@ -1217,7 +1213,7 @@ async function printDailyReservations(
               '</div>' +
               '</td>' +
               '<td>' +
-              (reservation.status === 'print_available' ? '—' : reservation.guests) +
+              reservation.guests +
               '</td>' +
               '<td class="' +
               statusClass +
