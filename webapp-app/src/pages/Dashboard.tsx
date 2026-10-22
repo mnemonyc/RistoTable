@@ -968,6 +968,93 @@ async function printDailyReservations(
 
     const rows: string[] = []
 
+    // Solo per la stampa: nelle sale completamente prenotate, aggiunge
+    // una riga virtuale per ogni tavolo che si libera dopo una prenotazione
+    // entro le 22:30, all'orario esatto di fine (durata 90 minuti).
+    const releaseCutoffMinutes = 22 * 60 + 30
+    const printOnlyReleaseReservations: PrintableReservation[] = []
+
+    printableRooms.forEach(room => {
+      const roomTables = printableTables.filter(
+        table => table.room_id === room.id
+      )
+
+      if (roomTables.length === 0) return
+
+      const roomTableIds = new Set(roomTables.map(table => table.id))
+      const roomBookings = sortedReservations.filter(
+        reservation =>
+          reservation.status !== 'cancelled' &&
+          reservation.tables.some(table => roomTableIds.has(table.id))
+      )
+
+      const bookedTableIds = new Set(
+        roomBookings.flatMap(reservation =>
+          reservation.tables
+            .filter(table => roomTableIds.has(table.id))
+            .map(table => table.id)
+        )
+      )
+
+      const roomIsFull = roomTables.every(table => bookedTableIds.has(table.id))
+      if (!roomIsFull) return
+
+      roomTables.forEach(table => {
+        const tableBookings = roomBookings
+          .filter(reservation =>
+            reservation.tables.some(item => item.id === table.id)
+          )
+          .sort((a, b) =>
+            timeToMinutes(a.reservation_time) -
+            timeToMinutes(b.reservation_time)
+          )
+
+        // La prima disponibilità è la fine della prima prenotazione,
+        // purché non ci sia un'altra prenotazione che riprenda prima o
+        // esattamente in quell'orario.
+        for (let i = 0; i < tableBookings.length; i++) {
+          const booking = tableBookings[i]
+          const releaseMinutes = timeToMinutes(booking.reservation_time) + 90
+          const nextBookingStart = tableBookings[i + 1]
+            ? timeToMinutes(tableBookings[i + 1].reservation_time)
+            : Infinity
+
+          if (
+            releaseMinutes <= releaseCutoffMinutes &&
+            releaseMinutes < nextBookingStart
+          ) {
+            const releaseHour = String(Math.floor(releaseMinutes / 60)).padStart(2, '0')
+            const releaseMinute = String(releaseMinutes % 60).padStart(2, '0')
+
+            printOnlyReleaseReservations.push({
+              id: `print-release-${table.id}-${releaseMinutes}`,
+              reservation_time: `${releaseHour}:${releaseMinute}`,
+              guests: 0,
+              notes: 'PRIMO ORARIO DISPONIBILE',
+              status: 'print_available',
+              customer: {
+                full_name: 'DISPONIBILE',
+                phone: null,
+              },
+              tables: [{
+                id: table.id,
+                table_name: table.table_name,
+              }],
+            })
+            break
+          }
+        }
+      })
+    })
+
+    const reservationsForPrint = [
+      ...sortedReservations,
+      ...printOnlyReleaseReservations,
+    ].sort((a, b) =>
+      timeToMinutes(a.reservation_time) -
+      timeToMinutes(b.reservation_time)
+    )
+
     printableTablesSorted.forEach(
       table => {
         const normalizedTableName =
@@ -988,7 +1075,7 @@ async function printDailyReservations(
         }
 
         const tableReservations =
-          sortedReservations.filter(
+          reservationsForPrint.filter(
             reservation =>
               reservation.tables.some(
                 item =>
@@ -1096,17 +1183,18 @@ async function printDailyReservations(
                 : '—'
 
             const status =
-              getStatusLabel(
-                reservation.status
-              )
+              reservation.status === 'print_available'
+                ? 'DISPONIBILE'
+                : getStatusLabel(reservation.status)
 
             const statusClass =
-              reservation.status ===
-              'cancelled'
-                ? 'cancelled'
-                : isGrouped
-                  ? 'print-grouped'
-                  : 'print-occupied'
+              reservation.status === 'print_available'
+                ? 'print-free'
+                : reservation.status === 'cancelled'
+                  ? 'cancelled'
+                  : isGrouped
+                    ? 'print-grouped'
+                    : 'print-occupied'
 
             rows.push(
               '<tr>' +
@@ -1129,7 +1217,7 @@ async function printDailyReservations(
               '</div>' +
               '</td>' +
               '<td>' +
-              reservation.guests +
+              (reservation.status === 'print_available' ? '—' : reservation.guests) +
               '</td>' +
               '<td class="' +
               statusClass +
@@ -1228,101 +1316,6 @@ async function printDailyReservations(
           )
         }
       )
-
-    // Aggiunge in coda alla stampa i tavoli che si liberano entro le 22:30,
-    // ma soltanto per le sale completamente prenotate.
-    const cutoffMinutes = 22 * 60 + 30
-    const releaseRows: string[] = []
-
-    printableRooms.forEach(room => {
-      const roomTables = printableTables
-        .filter(table => table.room_id === room.id)
-        .sort((a, b) =>
-          a.table_name.localeCompare(b.table_name, 'it', {
-            numeric: true,
-            sensitivity: 'base',
-          })
-        )
-
-      if (roomTables.length === 0) {
-        return
-      }
-
-      const roomBookings = sortedReservations.filter(
-        reservation =>
-          reservation.status !== 'cancelled' &&
-          reservation.tables.some(reservationTable =>
-            roomTables.some(table =>
-              table.id === reservationTable.id
-            )
-          )
-      )
-
-      const bookedTableIds = new Set<string>()
-
-      roomBookings.forEach(reservation => {
-        reservation.tables.forEach(reservationTable => {
-          const table = roomTables.find(
-            item => item.id === reservationTable.id
-          )
-          if (table) bookedTableIds.add(table.id)
-        })
-      })
-
-      const roomIsFull = roomTables.every(table =>
-        bookedTableIds.has(table.id)
-      )
-
-      if (!roomIsFull) {
-        return
-      }
-
-      const freeingTables = roomTables.filter(table => {
-        const tableBookings = roomBookings.filter(reservation =>
-          reservation.tables.some(
-            reservationTable =>
-              reservationTable.id === table.id
-          )
-        )
-
-        if (tableBookings.length === 0) {
-          return false
-        }
-
-        const latestEndBeforeCutoff = Math.max(
-          ...tableBookings
-            .filter(
-              reservation =>
-                timeToMinutes(reservation.reservation_time) <= cutoffMinutes
-            )
-            .map(
-              reservation =>
-                timeToMinutes(reservation.reservation_time) + 90
-            ),
-          0
-        )
-
-        return latestEndBeforeCutoff > 0 &&
-          latestEndBeforeCutoff <= cutoffMinutes
-      })
-
-      if (freeingTables.length > 0) {
-        releaseRows.push(
-          '<tr class="release-row">' +
-          '<td colspan="6">' +
-          '<strong>TAVOLI CHE SI LIBERANO ENTRO LE 22:30 — ' +
-          escapeHtml(room.room_name.toUpperCase()) +
-          ':</strong> ' +
-          freeingTables
-            .map(table => escapeHtml(table.table_name))
-            .join(', ') +
-          '</td>' +
-          '</tr>'
-        )
-      }
-    })
-
-    rows.push(...releaseRows)
 
     const content =
       printableTablesSorted.length > 0
