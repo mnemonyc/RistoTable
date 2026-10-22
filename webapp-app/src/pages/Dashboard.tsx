@@ -74,6 +74,12 @@ function normalizeTime(
   return value.slice(0, 5)
 }
 
+function timeToMinutes(value: string): number {
+  const normalized = normalizeTime(value)
+  const [hours, minutes] = normalized.split(':').map(Number)
+  return hours * 60 + minutes
+}
+
 function getStatusLabel(
   status: string
 ): string {
@@ -448,6 +454,15 @@ async function printDailyReservations(
     .print-grouped {
       color: #92400e;
       background: #fef3c7;
+      font-weight: bold;
+    }
+
+    .reservation-list .release-row td {
+      padding: 10px 8px;
+      background: #dbeafe;
+      color: #1e3a8a;
+      border-top: 2px solid #60a5fa;
+      font-size: 13px;
       font-weight: bold;
     }
 
@@ -1212,6 +1227,101 @@ async function printDailyReservations(
           )
         }
       )
+
+    // Aggiunge in coda alla stampa i tavoli che si liberano entro le 22:30,
+    // ma soltanto per le sale completamente prenotate.
+    const cutoffMinutes = 22 * 60 + 30
+    const releaseRows: string[] = []
+
+    printableRooms.forEach(room => {
+      const roomTables = printableTables
+        .filter(table => table.room_id === room.id)
+        .sort((a, b) =>
+          a.table_name.localeCompare(b.table_name, 'it', {
+            numeric: true,
+            sensitivity: 'base',
+          })
+        )
+
+      if (roomTables.length === 0) {
+        return
+      }
+
+      const roomBookings = sortedReservations.filter(
+        reservation =>
+          reservation.status !== 'cancelled' &&
+          reservation.tables.some(reservationTable =>
+            roomTables.some(table =>
+              table.table_name === reservationTable.table_name
+            )
+          )
+      )
+
+      const bookedTableIds = new Set<string>()
+
+      roomBookings.forEach(reservation => {
+        reservation.tables.forEach(reservationTable => {
+          const table = roomTables.find(
+            item => item.table_name === reservationTable.table_name
+          )
+          if (table) bookedTableIds.add(table.id)
+        })
+      })
+
+      const roomIsFull = roomTables.every(table =>
+        bookedTableIds.has(table.id)
+      )
+
+      if (!roomIsFull) {
+        return
+      }
+
+      const freeingTables = roomTables.filter(table => {
+        const tableBookings = roomBookings.filter(reservation =>
+          reservation.tables.some(
+            reservationTable =>
+              reservationTable.table_name === table.table_name
+          )
+        )
+
+        if (tableBookings.length === 0) {
+          return false
+        }
+
+        const latestEndBeforeCutoff = Math.max(
+          ...tableBookings
+            .filter(
+              reservation =>
+                timeToMinutes(reservation.reservation_time) < cutoffMinutes
+            )
+            .map(
+              reservation =>
+                timeToMinutes(reservation.reservation_time) + 90
+            ),
+          0
+        )
+
+        return latestEndBeforeCutoff > 0 &&
+          latestEndBeforeCutoff <= cutoffMinutes
+      })
+
+      if (freeingTables.length > 0) {
+        releaseRows.push(
+          '<tr class="release-row">' +
+          '<td colspan="6">' +
+          '<strong>TAVOLI CHE SI LIBERANO ENTRO LE 22:30 — ' +
+          escapeHtml(room.room_name.toUpperCase()) +
+          ':</strong> ' +
+          freeingTables
+            .map(table => escapeHtml(table.table_name))
+            .join(', ') +
+          '</td>' +
+          '</tr>'
+        )
+      }
+    })
+
+    rows.push(...releaseRows)
 
     const content =
       printableTablesSorted.length > 0
