@@ -50,6 +50,7 @@ type PrintableReservation = {
     phone: string | null
   }
   tables: {
+    id: string
     table_name: string
   }[]
 }
@@ -1252,7 +1253,7 @@ async function printDailyReservations(
           reservation.status !== 'cancelled' &&
           reservation.tables.some(reservationTable =>
             roomTables.some(table =>
-              table.table_name === reservationTable.table_name
+              table.id === reservationTable.id
             )
           )
       )
@@ -1262,7 +1263,7 @@ async function printDailyReservations(
       roomBookings.forEach(reservation => {
         reservation.tables.forEach(reservationTable => {
           const table = roomTables.find(
-            item => item.table_name === reservationTable.table_name
+            item => item.id === reservationTable.id
           )
           if (table) bookedTableIds.add(table.id)
         })
@@ -1280,7 +1281,7 @@ async function printDailyReservations(
         const tableBookings = roomBookings.filter(reservation =>
           reservation.tables.some(
             reservationTable =>
-              reservationTable.table_name === table.table_name
+              reservationTable.id === table.id
           )
         )
 
