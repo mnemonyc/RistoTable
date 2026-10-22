@@ -1293,7 +1293,7 @@ async function printDailyReservations(
           ...tableBookings
             .filter(
               reservation =>
-                timeToMinutes(reservation.reservation_time) < cutoffMinutes
+                timeToMinutes(reservation.reservation_time) <= cutoffMinutes
             )
             .map(
               reservation =>
