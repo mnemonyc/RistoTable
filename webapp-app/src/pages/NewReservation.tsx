@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -288,6 +289,53 @@ export default function NewReservation({
     setLoadingAvailability,
   ] = useState(false)
 
+  const closureDecisions = useRef(new Map<string, boolean>())
+
+  async function ensureDateIsOpen(): Promise<boolean> {
+    const { data: closure, error: closureError } = await supabase
+      .from('business_closures')
+      .select('id')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .eq('closed_date', selectedDate)
+      .maybeSingle()
+
+    if (closureError) {
+      setError(`Errore controllo chiusure: ${closureError.message}`)
+      return false
+    }
+
+    if (!closure) return true
+
+    if (closureDecisions.current.has(selectedDate)) {
+      return closureDecisions.current.get(selectedDate) === true
+    }
+
+    const unlock = window.confirm(
+      `Bacco è chiuso per ferie il ${formatDateIT(selectedDate)}. Vuoi sbloccare questa giornata e consentire le prenotazioni?`
+    )
+
+    if (!unlock) {
+      closureDecisions.current.set(selectedDate, false)
+      setError(`Bacco è chiuso il ${formatDateIT(selectedDate)}. Per prenotare devi sbloccare la giornata.`)
+      return false
+    }
+
+    const { error: deleteError } = await supabase
+      .from('business_closures')
+      .delete()
+      .eq('id', closure.id)
+      .eq('restaurant_id', RESTAURANT_ID)
+
+    if (deleteError) {
+      setError(`Impossibile sbloccare la giornata: ${deleteError.message}`)
+      return false
+    }
+
+    closureDecisions.current.set(selectedDate, true)
+    setError('Giornata sbloccata. Puoi procedere con la prenotazione.')
+    return true
+  }
+
   const [settings, setSettings] =
     useState<RestaurantSettings>(
       DEFAULT_RESTAURANT_SETTINGS
@@ -514,6 +562,12 @@ export default function NewReservation({
   async function loadAvailability() {
     setLoadingAvailability(true)
     setError('')
+
+    const dateIsOpen = await ensureDateIsOpen()
+    if (!dateIsOpen) {
+      setLoadingAvailability(false)
+      return
+    }
 
     const range =
       getReservationDateRange(
@@ -758,6 +812,7 @@ export default function NewReservation({
   function handleDateChange(
     value: string
   ) {
+    closureDecisions.current.delete(value)
     setSelectedDate(value)
     setSelectedTableIds([])
   }
@@ -1262,6 +1317,12 @@ export default function NewReservation({
     setSaving(true)
 
     try {
+      const dateIsOpen = await ensureDateIsOpen()
+      if (!dateIsOpen) {
+        setSaving(false)
+        return
+      }
+
       const availability =
         await finalAvailabilityCheck()
 
