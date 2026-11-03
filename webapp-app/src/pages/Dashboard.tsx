@@ -7,6 +7,7 @@ import ReservationsList from './ReservationsList'
 import TableMap from './TableMap'
 import DashboardStats from './DashboardStats'
 import TableManagement from './TableManagement'
+import ClosureManagement from './ClosureManagement'
 import ItalianDateInput from '../lib/ItalianDateInput'
 import { formatDateIT } from '../lib/dateUtils'
 
@@ -1403,6 +1404,9 @@ export default function Dashboard() {
   const [showTables, setShowTables] =
     useState(false)
 
+  const [showClosures, setShowClosures] =
+    useState(false)
+
   const [showNew, setShowNew] =
     useState(false)
 
@@ -1453,6 +1457,14 @@ export default function Dashboard() {
         onBack={
           closeNewReservation
         }
+      />
+    )
+  }
+
+  if (showClosures) {
+    return (
+      <ClosureManagement
+        onBack={() => setShowClosures(false)}
       />
     )
   }
@@ -1529,6 +1541,13 @@ export default function Dashboard() {
           }
         >
           ➕ Nuova Prenotazione
+        </button>
+
+        <button
+          onClick={() => setShowClosures(true)}
+          style={{ background: '#7c2d12', color: '#fff' }}
+        >
+          🏖️ Imposta chiusura
         </button>
 
         <button
