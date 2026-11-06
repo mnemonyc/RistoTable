@@ -17,7 +17,7 @@ export const DEFAULT_RESTAURANT_SETTINGS: RestaurantSettings = {
   firstShiftEnd: '22:00',
   secondShiftStart: '22:00',
   secondShiftEnd: '24:00',
-  reservationDurationMinutes: 90,
+  reservationDurationMinutes: 105,
   timeIntervalMinutes: 15,
 }
 
