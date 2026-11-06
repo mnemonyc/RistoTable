@@ -1074,7 +1074,7 @@ export default function TableMap({
                 '#ffffff',
             }}
           >
-            1 ora e 30 minuti
+            1 ora e 45 minuti
           </strong>
         </div>
       </div>
