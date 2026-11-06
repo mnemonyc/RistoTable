@@ -11,7 +11,7 @@ import {
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
 
-const RESERVATION_DURATION_MINUTES = 90
+const RESERVATION_DURATION_MINUTES = 105
 
 type TableItem = {
   id: string
