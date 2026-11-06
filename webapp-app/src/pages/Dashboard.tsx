@@ -971,7 +971,7 @@ async function printDailyReservations(
 
     // Solo per la stampa: nelle sale completamente prenotate, aggiunge
     // una riga virtuale per ogni tavolo che si libera dopo una prenotazione
-    // entro le 22:30, all'orario esatto di fine (durata 90 minuti).
+    // entro le 22:30, all'orario esatto di fine (durata 105 minuti).
     const releaseCutoffMinutes = 22 * 60 + 30
     const printOnlyReleaseReservations: PrintableReservation[] = []
 
@@ -1015,7 +1015,7 @@ async function printDailyReservations(
         // esattamente in quell'orario.
         for (let i = 0; i < tableBookings.length; i++) {
           const booking = tableBookings[i]
-          const releaseMinutes = timeToMinutes(booking.reservation_time) + 90
+          const releaseMinutes = timeToMinutes(booking.reservation_time) + 105
           const nextBookingStart = tableBookings[i + 1]
             ? timeToMinutes(tableBookings[i + 1].reservation_time)
             : Infinity
