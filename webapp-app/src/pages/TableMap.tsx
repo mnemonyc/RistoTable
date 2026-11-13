@@ -11,7 +11,8 @@ import {
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
 
-const RESERVATION_DURATION_MINUTES = 105
+const durationForGuests = (guestCount: number) =>
+  guestCount >= 7 ? 105 : 90
 
 type TableItem = {
   id: string
@@ -34,6 +35,7 @@ type ReservationItem = {
   reservation_date: string
   reservation_time: string
   guests: number
+  occupancy_duration_minutes: number | null
   status: string
 }
 
@@ -414,6 +416,7 @@ export default function TableMap({
         reservation_date,
         reservation_time,
         guests,
+        occupancy_duration_minutes,
         status
         `
       )
@@ -575,7 +578,7 @@ export default function TableMap({
     const requestedEnd =
       addMinutes(
         requestedStart,
-        RESERVATION_DURATION_MINUTES
+        durationForGuests(guests)
       )
 
     return reservations.some(
@@ -598,7 +601,7 @@ export default function TableMap({
         const existingEnd =
           addMinutes(
             existingStart,
-            RESERVATION_DURATION_MINUTES
+            reservation.occupancy_duration_minutes ?? 105
           )
 
         return intervalsOverlap(
