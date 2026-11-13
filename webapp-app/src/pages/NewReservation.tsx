@@ -19,7 +19,8 @@ import {
 const RESTAURANT_ID =
   '0153d55d-1f5c-42c9-8da2-4eab40533c4e'
 
-const RESERVATION_DURATION_MINUTES = 105
+const durationForGuests = (guestCount: number) =>
+  guestCount >= 7 ? 105 : 90
 
 type ReservationSelection = {
   date: string
@@ -65,6 +66,7 @@ type Reservation = {
   reservation_date: string
   reservation_time: string
   guests: number
+  occupancy_duration_minutes: number | null
   table_id: string | null
   status: string
 }
@@ -580,7 +582,7 @@ export default function NewReservation({
     } = await supabase
       .from('reservations')
       .select(
-        'id, reservation_date, reservation_time, guests, table_id, status'
+        'id, reservation_date, reservation_time, guests, occupancy_duration_minutes, table_id, status'
       )
       .eq(
         'restaurant_id',
@@ -687,7 +689,7 @@ export default function NewReservation({
     const requestedEnd =
       addMinutes(
         requestedStart,
-        RESERVATION_DURATION_MINUTES
+        durationForGuests(guests)
       )
 
     for (
@@ -705,7 +707,7 @@ export default function NewReservation({
       const reservationEnd =
         addMinutes(
           reservationStart,
-          RESERVATION_DURATION_MINUTES
+          reservation.occupancy_duration_minutes ?? 105
         )
 
       const overlaps =
@@ -1166,7 +1168,7 @@ export default function NewReservation({
     const requestedEnd =
       addMinutes(
         requestedStart,
-        RESERVATION_DURATION_MINUTES
+        durationForGuests(guests)
       )
 
     const conflicting =
@@ -1187,7 +1189,7 @@ export default function NewReservation({
       const reservationEnd =
         addMinutes(
           reservationStart,
-          RESERVATION_DURATION_MINUTES
+          reservation.occupancy_duration_minutes ?? 105
         )
 
       if (
@@ -1394,6 +1396,7 @@ export default function NewReservation({
           reservation_time:
             selectedTime,
           guests,
+          occupancy_duration_minutes: durationForGuests(guests),
           notes:
             customerNotes.trim() ||
             null,
