@@ -44,6 +44,7 @@ type PrintableReservation = {
   id: string
   reservation_time: string
   guests: number
+  occupancy_duration_minutes: number | null
   notes: string | null
   status: string
   customer?: {
@@ -518,6 +519,7 @@ async function printDailyReservations(
         table_id,
         reservation_time,
         guests,
+        occupancy_duration_minutes,
         notes,
         status
         `
@@ -971,7 +973,7 @@ async function printDailyReservations(
 
     // Solo per la stampa: nelle sale completamente prenotate, aggiunge
     // una riga virtuale per ogni tavolo che si libera dopo una prenotazione
-    // entro le 22:30, all'orario esatto di fine (durata 105 minuti).
+    // entro le 22:30, all'orario esatto di fine (durata salvata per prenotazione).
     const releaseCutoffMinutes = 22 * 60 + 30
     const printOnlyReleaseReservations: PrintableReservation[] = []
 
@@ -1015,7 +1017,7 @@ async function printDailyReservations(
         // esattamente in quell'orario.
         for (let i = 0; i < tableBookings.length; i++) {
           const booking = tableBookings[i]
-          const releaseMinutes = timeToMinutes(booking.reservation_time) + 105
+          const releaseMinutes = timeToMinutes(booking.reservation_time) + (booking.occupancy_duration_minutes ?? 105)
           const nextBookingStart = tableBookings[i + 1]
             ? timeToMinutes(tableBookings[i + 1].reservation_time)
             : Infinity
@@ -1031,6 +1033,7 @@ async function printDailyReservations(
               id: `print-release-${table.id}-${releaseMinutes}`,
               reservation_time: `${releaseHour}:${releaseMinute}`,
               guests: table.seats,
+              occupancy_duration_minutes: 0,
               notes: null,
               status: 'print_available',
               customer: {
