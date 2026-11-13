@@ -1744,7 +1744,7 @@ export default function NewReservation({
           ⏱️ La prenotazione occupa
           il tavolo per{' '}
           <strong>
-            1 ora e 45 minuti
+            {guests >= 7 ? '1 ora e 45 minuti' : '1 ora e 30 minuti'}
           </strong>
           .
         </p>
