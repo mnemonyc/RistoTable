@@ -291,9 +291,14 @@ function openWhatsAppConfirmation(
     `\u{1F465} Coperti: ${reservation.guests}`,
     '',
     'Vi aspettiamo!',
-    'Memorizza questo numero per le prossime prenotazioni \u{1F609}',
-    'Si chiede la massima puntualità.',
-    'Grazie e a presto. \u{1F377}',
+    'Memorizza questo numero per le prossime prenotazioni 😉',
+    'Vi chiediamo cortesemente la massima puntualità.',
+    'Grazie e a presto! 🍷',
+    '',
+    '❤️ Seguici sui nostri canali social e lascia un like alle nostre pagine per rimanere sempre aggiornato sulle novità, le iniziative e tutte le sorprese di Bacco!',
+    '',
+    'Facebook: https://www.facebook.com/p/Bacco-Il-tempio-del-Panzerotto-100063617620942/?locale=it_IT',
+    'Instagram: https://www.instagram.com/dabacco_iltempiodelpanzerotto/',
   ].join('\n')
 
   const url =
