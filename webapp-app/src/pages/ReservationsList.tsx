@@ -297,8 +297,11 @@ function openWhatsAppConfirmation(
     '',
     '❤️ Seguici sui nostri canali social e lascia un like alle nostre pagine per rimanere sempre aggiornato sulle novità, le iniziative e tutte le sorprese di Bacco!',
     '',
-    'Facebook: https://www.facebook.com/p/Bacco-Il-tempio-del-Panzerotto-100063617620942/?locale=it_IT',
-    'Instagram: https://www.instagram.com/dabacco_iltempiodelpanzerotto/',
+    '👍 Facebook:',
+    'https://www.facebook.com/p/Bacco-Il-tempio-del-Panzerotto-100063617620942/?locale=it_IT',
+    '',
+    '📸 Instagram:',
+    'https://www.instagram.com/dabacco_iltempiodelpanzerotto/',
   ].join('\n')
 
   const url =
