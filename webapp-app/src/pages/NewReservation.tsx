@@ -582,7 +582,7 @@ export default function NewReservation({
     } = await supabase
       .from('reservations')
       .select(
-        'id, reservation_date, reservation_time, guests, occupancy_duration_minutes, table_id, status'
+        'id, reservation_date, reservation_time, guests, occupancy_duration_minutes, table_id, status, occupancy_duration_minutes'
       )
       .eq(
         'restaurant_id',
@@ -1097,7 +1097,7 @@ export default function NewReservation({
     } = await supabase
       .from('reservations')
       .select(
-        'id, reservation_date, reservation_time, guests, table_id, status'
+        'id, reservation_date, reservation_time, guests, table_id, status, occupancy_duration_minutes'
       )
       .eq(
         'restaurant_id',
@@ -1404,7 +1404,7 @@ export default function NewReservation({
             'booked',
         })
         .select(
-          'id, reservation_date, reservation_time, guests, table_id, status'
+          'id, reservation_date, reservation_time, guests, table_id, status, occupancy_duration_minutes'
         )
         .single()
 
