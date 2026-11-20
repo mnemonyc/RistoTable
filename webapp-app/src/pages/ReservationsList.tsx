@@ -231,9 +231,10 @@ function sortReservationsByTableAndTime(
   })
 }
 
-function openWhatsAppConfirmation(
-  reservation: ReservationComplete
-) {
+function getWhatsAppConfirmationUrl(
+  reservation: ReservationComplete,
+  forceCancelled = false
+): string | null {
   const rawPhone =
     reservation.customer?.phone?.trim() || ''
 
@@ -241,7 +242,7 @@ function openWhatsAppConfirmation(
     window.alert(
       'Questo cliente non ha un numero di telefono salvato.'
     )
-    return
+    return null
   }
 
   let phone = rawPhone.replace(/\D/g, '')
@@ -259,10 +260,8 @@ function openWhatsAppConfirmation(
     window.alert(
       'Il numero di telefono salvato non sembra valido. Controllalo nella scheda cliente.'
     )
-    return
+    return null
   }
-
-
 
   const now = new Date()
   const currentMinutes =
@@ -281,7 +280,8 @@ function openWhatsAppConfirmation(
       ? nameParts[nameParts.length - 1]
       : customerName
 
-  const isCancelled = reservation.status === 'cancelled'
+  const isCancelled =
+    forceCancelled || reservation.status === 'cancelled'
 
   const socialMessage = [
     '',
@@ -323,7 +323,16 @@ function openWhatsAppConfirmation(
   const url =
     `https://wa.me/${phone}?${new URLSearchParams({ text: message }).toString()}`
 
-  window.open(url, '_blank', 'noopener,noreferrer')
+  return url
+}
+
+function openWhatsAppConfirmation(
+  reservation: ReservationComplete
+) {
+  const url = getWhatsAppConfirmationUrl(reservation)
+  if (url) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
 }
 
 function openWhatsAppReminder(
@@ -1475,6 +1484,19 @@ export default function ReservationsList({
       return
     }
 
+    // Prepariamo il messaggio di annullamento e apriamo subito
+    // una finestra vuota: dopo l'operazione asincrona il browser
+    // potrebbe bloccare una nuova finestra come popup non richiesto.
+    const whatsappUrl =
+      getWhatsAppConfirmationUrl(
+        reservation,
+        true
+      )
+    const whatsappWindow =
+      whatsappUrl
+        ? window.open('about:blank', '_blank')
+        : null
+
     setDeletingReservationId(
       reservation.id
     )
@@ -1513,6 +1535,16 @@ export default function ReservationsList({
         )
       }
 
+      // Solo dopo la cancellazione riuscita portiamo WhatsApp
+      // sul messaggio già compilato per il cliente.
+      if (whatsappUrl && whatsappWindow) {
+        whatsappWindow.location.href = whatsappUrl
+      } else if (whatsappUrl) {
+        window.alert(
+          'Prenotazione cancellata, ma il browser ha bloccato l’apertura di WhatsApp. Apri WhatsApp manualmente per avvisare il cliente.'
+        )
+      }
+
       if (
         editingReservation?.id ===
         reservation.id
@@ -1545,6 +1577,10 @@ export default function ReservationsList({
        */
       await loadReservations()
     } catch (deleteError) {
+      if (whatsappWindow && !whatsappWindow.closed) {
+        whatsappWindow.close()
+      }
+
       console.error(
         'ERRORE CANCELLAZIONE:',
         deleteError
