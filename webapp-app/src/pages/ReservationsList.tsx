@@ -283,44 +283,42 @@ function openWhatsAppConfirmation(
 
   const isCancelled = reservation.status === 'cancelled'
 
-  const message = isCancelled
-    ? [
-        `${greeting} Sig. ${surname || 'Cliente'},`,
-        '',
-        `come da Lei richiesto, abbiamo provveduto ad annullare la Sua prenotazione per il giorno ${formatDateIT(reservation.reservation_date)} alle ore ${normalizeTime(reservation.reservation_time)}.`,
-        '',
-        'Grazie per averci avvisato.',
-        '',
-        '❤️ Seguici sui nostri canali social e lascia un like alle nostre pagine per rimanere sempre aggiornato sulle novità, le iniziative e tutte le sorprese di Bacco!',
-        '',
-        '👍 Facebook:',
-        'https://www.facebook.com/p/Bacco-Il-tempio-del-Panzerotto-100063617620942/?locale=it_IT',
-        '',
-        '📸 Instagram:',
-        'https://www.instagram.com/dabacco_iltempiodelpanzerotto/',
-      ].join('\\n')
-    : [
-        `${greeting} Sig. ${surname || 'Cliente'},`,
-        '',
-        'Vi confermiamo la prenotazione presso BACCO IL TEMPIO DEL PANZEROTTO.',
-        '',
-        `\\u{1F4C5} Data: ${formatDateIT(reservation.reservation_date)}`,
-        `\\u{1F552} Orario: ${normalizeTime(reservation.reservation_time)}`,
-        `\\u{1F465} Coperti: ${reservation.guests}`,
-        '',
-        'Vi aspettiamo!',
-        'Memorizza questo numero per le prossime prenotazioni 😉',
-        'Vi chiediamo cortesemente la massima puntualità.',
-        'Grazie e a presto! 🍷',
-        '',
-        '❤️ Seguici sui nostri canali social e lascia un like alle nostre pagine per rimanere sempre aggiornato sulle novità, le iniziative e tutte le sorprese di Bacco!',
-        '',
-        '👍 Facebook:',
-        'https://www.facebook.com/p/Bacco-Il-tempio-del-Panzerotto-100063617620942/?locale=it_IT',
-        '',
-        '📸 Instagram:',
-        'https://www.instagram.com/dabacco_iltempiodelpanzerotto/',
-      ].join('\\n')
+  const socialMessage = [
+    '',
+    '❤️ Seguici sui nostri canali social e lascia un like alle nostre pagine per rimanere sempre aggiornato sulle novità, le iniziative e tutte le sorprese di Bacco!',
+    '',
+    '👍 Facebook:',
+    'https://www.facebook.com/p/Bacco-Il-tempio-del-Panzerotto-100063617620942/?locale=it_IT',
+    '',
+    '📸 Instagram:',
+    'https://www.instagram.com/dabacco_iltempiodelpanzerotto/',
+  ]
+
+  const message = (
+    isCancelled
+      ? [
+          `${greeting} Sig. ${surname || 'Cliente'},`,
+          '',
+          `come da Lei richiesto abbiamo provveduto ad annullare la Sua prenotazione per il giorno ${formatDateIT(reservation.reservation_date)} alle ore ${normalizeTime(reservation.reservation_time)}.`,
+          'Grazie per averci avvisato.',
+          ...socialMessage,
+        ]
+      : [
+          `${greeting} Sig. ${surname || 'Cliente'},`,
+          '',
+          'Vi confermiamo la prenotazione presso BACCO IL TEMPIO DEL PANZEROTTO.',
+          '',
+          `📅 Data: ${formatDateIT(reservation.reservation_date)}`,
+          `🕒 Orario: ${normalizeTime(reservation.reservation_time)}`,
+          `👥 Coperti: ${reservation.guests}`,
+          '',
+          'Vi aspettiamo!',
+          'Memorizza questo numero per le prossime prenotazioni 😉',
+          'Vi chiediamo cortesemente la massima puntualità.',
+          'Grazie e a presto! 🍷',
+          ...socialMessage,
+        ]
+  ).join('\n')
 
   const url =
     `https://wa.me/${phone}?${new URLSearchParams({ text: message }).toString()}`
